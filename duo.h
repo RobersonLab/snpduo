@@ -15,11 +15,9 @@ const string RELATIONSHIP[] = {"Unrelated","Identical","ParentChild","Sibling","
 // Class
 class Duo
 {
-	public:
-	vector<string> fid1; // Family ID 1
-	vector<string> iid1; // Individual ID 1
-	vector<string> fid2; // Family ID 2
-	vector<string> iid2; // Individual ID 2
+	public:	
+	vector<Person*> ind1Index;
+	vector<Person*> ind2Index;
 	vector<int> specifiedRelationship; // Determined from ped file
 	vector<int> calculatedRelationship; // From Mean / SD
 	vector<int> ibs0Count; // A count of IBS0 calls
@@ -28,12 +26,20 @@ class Duo
 	vector<double> meanIbs; // Mean IBS score for analyzed snps
 	vector<double> sdIbs; // SD IBS score for analyzed snps
 	
-	// Functions
-	void fillIdentities( Ped & );
-	void getCounts( Ped & );
+	// Size functions
+	unsigned int size() { return ind1Index.size(); }
+	unsigned int numCounts() { return ibs0Count.size(); }
+	unsigned int numSpecified() { return specifiedRelationship.size(); }
+	unsigned int numCalculated() { return calculatedRelationship.size(); }
+	unsigned int numMean() { return meanIbs.size(); }
+	unsigned int numSD() { return sdIbs.size(); }
+	
+	// Analysis functions
+	void fillIdentities( const Ped & );
+	void getCounts( const Ped & );
 	void getMeanAndSDFromCounts();
 	
-	void specifiedRelationships( Ped & );
+	void specifiedRelationships( const Ped & );
 	void calculatedRelationships();
 	
 	// File writing functions -- in output.cpp
@@ -45,11 +51,26 @@ class Duo
 	void printSpecifiedAndCalculated();
 	void printCalculatedOnly();
 	void printConflicted();
+	
+	// Constructor
+	Duo(): ind1Index( 0 ), ind2Index( 0 ), specifiedRelationship( 0 ), calculatedRelationship( 0 ), ibs0Count( 0 ), ibs1Count( 0 ), ibs2Count ( 0 ) {}
 };
 
-double isFirstDegreeClassifier (double &, double &);
-double whichFirstDegreeClassifier (double &, double &);
+class IBSCount
+{
+	public:
+	int ibs0;
+	int ibs1;
+	int ibs2;
+	
+	IBSCount(): ibs0( 0 ), ibs1( 0 ), ibs2( 0 )  {}
+};
 
-double calculateSD (double &, int &, int &, int &);
+IBSCount getIBS( Person *, Person * );
+
+double isFirstDegreeClassifier (const double &, const double &);
+double whichFirstDegreeClassifier (const double &, const double &);
+
+double calculateSD (const double &, const int &, const int &, const int &);
 
 #endif

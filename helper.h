@@ -18,12 +18,23 @@ class CArgs
 	vector<string> clinelist;
 	vector<string> clinevalue;
 	
-	// Functions
+	// Search functions
 	bool Search( string );
 	int Index( string );
+	
+	// Consistency check
 	void CheckSwitches();
+	
+	// Writing functions
 	void print();
 	void printArgs();
+	
+	// Sizing functions
+	int size() { return parametercount; }
+	unsigned int clineSize() { return clinelist.size(); }
+	
+	// Constructor
+	CArgs(): parametercount( 0 ), parameters( 0 ), parsed( 0 ), clinelist( 0 ), clinevalue( 0 ) {}
 };
 
 // Functions
@@ -33,5 +44,9 @@ void shutdown();
 
 bool getString (ifstream &, string &);
 bool getWhiteSpacePaddedString (ifstream &, string &, char &);
+bool getChar (ifstream &, char &);
+
+string int2String( const int );
+string dbl2String( const double );
 
 #endif

@@ -7,8 +7,9 @@
 using namespace std;
 
 // Custom Libraries
-#include "Duo.h"
+#include "duo.h"
 #include "options.h"
+#include "output.h"
 
 // Macros
 const double ISFIRSTSLOPE = -4.1632;
@@ -27,257 +28,402 @@ const int PARCHLD = 2;
 const int SIBS = 3;
 const int OTHERREL = 4;
 
-// Functions
-double isFirstDegreeClassifier ( double &mean, double &sd )
+//////////////////////////////////////////////////
+//
+// Classifier Functions
+//
+//////////////////////////////////////////////////
+inline double isFirstDegreeClassifier ( const double &mean, const double &sd )
 {
 	return ((ISFIRSTSLOPE * mean) + ISFIRSTINTERCEPT);
 }
 
-double whichFirstDegreeClassifier ( double &mean, double &sd )
+inline double whichFirstDegreeClassifier ( const double &mean, const double &sd )
 {
 	return (WHICHFIRSTSLOPESQUARE * (mean * mean)) + (WHICHFIRSTSLOPE * mean) + WHICHFIRSTINTERCEPT;
 }
 
-void Duo::fillIdentities( Ped &ped )
+//////////////////////////////////////////////////
+//
+// Standard functions
+//
+//////////////////////////////////////////////////
+void Duo::fillIdentities( const Ped &ped )
 {
-	int comparisons, counter;
-	counter = 0;
-	comparisons = (par::personcount * (par::personcount - 1)) / 2;
+	int comparisons = (par::personcount * (par::personcount - 1)) / 2;
 	
-	fid1.resize( comparisons );
-	iid1.resize( comparisons );
-	fid2.resize( comparisons );
-	iid2.resize( comparisons );
+	ind1Index.reserve( comparisons );
+	ind2Index.reserve( comparisons );
 	
 	for (int i = 0; i < par::personcount - 1; ++i)
 	{
 		for (int j = i + 1; j < par::personcount; ++j)
 		{
-			fid1[ counter ] = ped.samples[i]->fid;
-			iid1[ counter ] = ped.samples[i]->iid;
-			fid2[ counter ] = ped.samples[j]->fid;
-			iid2[ counter ] = ped.samples[j]->iid;
-			
-			++counter;
+			ind1Index.push_back( ped.samples[ i ] );
+			ind2Index.push_back( ped.samples[ j ] );
 		}
 	}
 }
 
-void Duo::getCounts(Ped &ped)
+void Duo::getCounts( const Ped &ped )
 {
-	int comparisons;
-	comparisons = (par::personcount * (par::personcount - 1)) / 2;
+	printLog("Getting IBS counts\n");
 	
-	fid1.resize( comparisons );
-	iid1.resize( comparisons );
-	fid2.resize( comparisons );
-	iid2.resize( comparisons );
-	ibs0Count.resize( comparisons );
-	ibs1Count.resize( comparisons );
-	ibs2Count.resize( comparisons );
+	int comparisons = (par::personcount * (par::personcount - 1)) / 2;
 	
-	int counter,ibs0, ibs1, ibs2;
-	ibs0 = ibs1 = ibs2 = counter = 0;
+	ind1Index.reserve( comparisons );
+	ind2Index.reserve( comparisons );
+	ibs0Count.reserve( comparisons );
+	ibs1Count.reserve( comparisons );
+	ibs2Count.reserve( comparisons );
 	
 	// Go comparison by comparison to calculate counts
 	for (int i = 0; i < par::personcount - 1; ++i)
-	{
-		
+	{		
 		for (int j = i + 1; j < par::personcount; ++j)
-		{
+		{			
+			ind1Index.push_back( ped.samples[ i ] );
+			ind2Index.push_back( ped.samples[ j ] );
 			
-			fid1[ counter ] = ped.samples[i]->fid;
-			iid1[ counter ] = ped.samples[i]->iid;
-			fid2[ counter ] = ped.samples[j]->fid;
-			iid2[ counter ] = ped.samples[j]->iid;
+			IBSCount tmp = getIBS( ped.samples[ i ], ped.samples[ j ] );
 			
-			ibs0 = ibs1 = ibs2 = 0;
-			
-			for (int k = 0; k < par::snpcount; ++k)
-			{
-				
-				if (ped.samples[i]->hasGenotype[k] and ped.samples[j]->hasGenotype[k])
-				{
-					if (ped.samples[i]->a1[k] == ped.samples[j]->a1[k])
-					{
-						if (ped.samples[i]->a2[k] == ped.samples[j]->a2[k])
-						{
-							++ibs2;
-						}
-						else
-						{
-							++ibs1;
-						}
-					}
-					else
-					{
-						if (ped.samples[i]->a2[k] == ped.samples[j]->a2[k])
-						{
-							++ibs1;
-						}
-						else
-						{
-							++ibs0;
-						}
-					}
-				}
-			}
-			
-			ibs0Count[ counter ] = ibs0;
-			ibs1Count[ counter ] = ibs1;
-			ibs2Count[ counter ] = ibs2;
-			
-			++counter;			
+			ibs0Count.push_back( tmp.ibs0 );
+			ibs1Count.push_back( tmp.ibs1 );
+			ibs2Count.push_back( tmp.ibs2 );
 		}
 	}
+}
+
+// IBSCount getIBS( Person *i1, Person *i2 )
+// {
+// 	IBSCount tmp;
+// 	
+// 	vector<bool>::iterator i1a1 = i1->a1.begin();
+// 	vector<bool>::iterator i1a2 = i1->a2.begin();
+// 	vector<bool>::iterator i2a1 = i2->a1.begin();
+// 	vector<bool>::iterator i2a2 = i2->a2.begin();
+// 	vector<bool>::iterator i1NC = i1->hasGenotype.begin();
+// 	vector<bool>::iterator i2NC = i2->hasGenotype.begin();
+// 	
+// 	while ( i1a1 != i1->a1.end() )
+// 	{
+// 		bool NC1 = *i1NC;
+// 		
+// 		if (NC1)
+// 		{
+// 			bool NC2 = *i2NC;
+// 			
+// 			if (NC2)
+// 			{
+// 				bool p1a1 = *i1a1;
+// 				bool p1a2 = *i1a2;
+// 				bool p2a1 = *i2a1;
+// 				bool p2a2 = *i2a2;
+// 				
+// 				if (p1a1 == p2a1)
+// 				{
+// 					if (p1a2 == p2a2) tmp.ibs2++;
+// 					else tmp.ibs1++;
+// 				}
+// 				else
+// 				{
+// 					if (p1a2 == p2a2) tmp.ibs1++;
+// 					else tmp.ibs0++;
+// 				}
+// 				
+// 				++i1a1;
+// 				++i1a2;
+// 				++i2a1;
+// 				++i2a2;
+// 				++i1NC;
+// 				++i2NC;
+// 			}
+// 			else
+// 			{
+// 				++i1a1;
+// 				++i1a2;
+// 				++i2a1;
+// 				++i2a2;
+// 				++i1NC;
+// 				++i2NC;
+// 			}
+// 		}
+// 		
+// 		else
+// 		{
+// 			++i1a1;
+// 			++i1a2;
+// 			++i2a1;
+// 			++i2a2;
+// 			++i1NC;
+// 			++i2NC;
+// 		}
+// 	}
+// 	
+// 	return tmp;
+// }
+
+IBSCount getIBS( Person *i1, Person *i2 )
+{
+	IBSCount tmp;
+	
+	vector<bool>::iterator i1a1 = i1->a1.begin();
+	vector<bool>::iterator i1a2 = i1->a2.begin();
+	vector<bool>::iterator i2a1 = i2->a1.begin();
+	vector<bool>::iterator i2a2 = i2->a2.begin();
+	vector<bool>::iterator i1NC = i1->hasGenotype.begin();
+	vector<bool>::iterator i2NC = i2->hasGenotype.begin();
+	
+	while ( i1a1 != i1->a1.end() )
+	{
+		bool NC1 = *i1NC;
+		
+		if (NC1)
+		{
+			bool NC2 = *i2NC;
+			
+			if (NC2)
+			{
+				bool p1a1 = *i1a1;
+				bool p1a2 = *i1a2;
+				bool p2a1 = *i2a1;
+				bool p2a2 = *i2a2;
+				
+				if (p1a1 == p2a1)
+				{
+					if (p1a2 == p2a2) tmp.ibs2++;
+					else tmp.ibs1++;
+				}
+				else
+				{
+					if (p1a2 == p2a2) tmp.ibs1++;
+					else tmp.ibs0++;
+				}
+			}
+		}
+		
+		++i1a1;
+		++i1a2;
+		++i2a1;
+		++i2a2;
+		++i1NC;
+		++i2NC;
+	}
+	
+	return tmp;
 }
 
 void Duo::getMeanAndSDFromCounts( )
 {
-	if (meanIbs.size() != ibs0Count.size()) meanIbs.resize( ibs0Count.size(), 0.0 );
-	if (sdIbs.size() != ibs0Count.size()) sdIbs.resize( ibs0Count.size(), 0.0 );
+	printLog("Calculating Mean and Standard Deviation of IBS\n");
 	
-	for (unsigned int i = 0; i < ibs0Count.size(); ++i)
+	if (numMean() != numCounts()) meanIbs.reserve( numCounts() );
+	if (numSD() != numCounts()) sdIbs.reserve( numCounts() );
+	
+	vector<int>::iterator ibs0iter = ibs0Count.begin();
+	vector<int>::iterator ibs1iter = ibs1Count.begin();
+	vector<int>::iterator ibs2iter = ibs2Count.begin();
+	
+	while ( ibs0iter < ibs0Count.end() )
 	{
-		meanIbs[i] = (double) ((ibs2Count[i]* 2) + ibs1Count[i]) / (ibs0Count[i] + ibs1Count[i] + ibs2Count[i]);
-		sdIbs[i] = calculateSD( meanIbs[i], ibs0Count[i], ibs1Count[i], ibs2Count[i] );
+		int ibs0 = *ibs0iter;
+		int ibs1 = *ibs1iter;
+		int ibs2 = *ibs2iter;
+		
+		double mean = (double) ((ibs2 * 2.0) + ibs1) / (ibs0 + ibs1 + ibs2);
+		
+		meanIbs.push_back( mean );
+		sdIbs.push_back( calculateSD( mean, ibs0, ibs1, ibs2 ) );
+		
+		++ibs0iter;
+		++ibs1iter;
+		++ibs2iter;
 	}
 }
 
-double calculateSD (double &mean, int &ibs0, int &ibs1, int &ibs2)
+double calculateSD (const double &mean, const int &ibs0, const int &ibs1, const int &ibs2)
 {
-	double tmp0, tmp1, tmp2, sum;
-	tmp0 = tmp1 = tmp2 = sum = 0.0;
-	
-	tmp2 = 2.0 - mean;
-	tmp2 *= tmp2;
-	tmp2 *= (double) ibs2;
-	
-	tmp1 = 1.0 - mean;
-	tmp1 *= tmp1;
-	tmp1 *= (double) ibs1;
-	
-	tmp0 = 0.0 - mean;
-	tmp0 *= tmp0;
-	tmp0 *= (double) ibs0;
-	sum = (double) ( ibs0 + ibs1 + ibs2 );
+	double tmp0 = ( 0.0 - mean ) * ( 0.0 - mean ) * ibs0;
+	double tmp1 = ( 1.0 - mean ) * ( 1.0 - mean ) * ibs1;
+	double tmp2 = ( 2.0 - mean ) * ( 2.0 - mean ) * ibs2;
+	double sum  = (double) ( ibs0 + ibs1 + ibs2 );
 	
 	return sqrt ((tmp2 + tmp1 + tmp0) / sum);
 }
 
-void Duo::specifiedRelationships( Ped &ped )
+void Duo::specifiedRelationships( const Ped &ped )
 {
-	if (fid1.size() == 0) this->fillIdentities( ped );
+	printLog("Getting specified relationships\n");
 	
-	specifiedRelationship.resize( fid1.size(), 0 );
+	if (size() == 0) fillIdentities( ped );
 	
-	bool sharemother, sharefather, checkshare, done;
-	sharemother = sharefather = checkshare = false;
+	specifiedRelationship.reserve( size() );
 	
-	int i1, i2;
-	i1 = i2 = 0;
-	
-	for (unsigned int i = 0; i < fid1.size(); ++i)
+	for (unsigned int i = 0; i < size(); ++i)
 	{
-		i1 = ped.findPerson( fid1[i], iid1[i] );
-		i2 = ped.findPerson( fid2[i], iid2[i] );
-		
-		sharemother = sharefather = checkshare = false;
-		
 		// Different family IDs = unrelated
-		if (ped.samples[i1]->fid != ped.samples[i2]->fid) specifiedRelationship[i] = UNREL;
+		if (ind1Index[i]->fid != ind2Index[i]->fid) specifiedRelationship.push_back( UNREL );
 		
 		// Same family ID, but no parents = unrelated
-		else if (ped.samples[i1]->pid == "0" and ped.samples[i1]->mid == "0" and ped.samples[i2]->pid == "0" and ped.samples[i2]->mid == "0") specifiedRelationship[i] = UNREL;
+		else if (ind1Index[i]->pid == "0" and ind1Index[i]->mid == "0" and ind2Index[i]->pid == "0" and ind2Index[i]->mid == "0")
+		{ specifiedRelationship.push_back( UNREL ); }
 		
 		else
 		{
+			bool sharemother = false;
+			bool sharefather = false;
+			bool checkshare = false;
+		
 			// Ind 1 has a father
-			if (ped.samples[i1]->pid != "0")
+			if (ind1Index[i]->pid != "0")
 			{	
 				// Ind1 father ID == Ind2 individual ID = parent child		
-				if (ped.samples[i1]->pid == ped.samples[i2]->iid) specifiedRelationship[i] = PARCHLD;
+				if (ind1Index[i]->pid == ind2Index[i]->iid)
+				{
+					specifiedRelationship.push_back( PARCHLD );
+					continue;
+				}
 				
 				// Ind2 has a father ID
-				else if (ped.samples[i2]->pid != "0")
+				else if (ind2Index[i]->pid != "0")
 				{
 					// ParentID Ind2 == IndID of Ind1 = parent child
-					if (ped.samples[i2]->pid == ped.samples[i1]->iid) specifiedRelationship[i] = PARCHLD;
+					if (ind2Index[i]->pid == ind1Index[i]->iid)
+					{
+						specifiedRelationship.push_back( PARCHLD );
+						continue;
+					}
 					
 					// Have same father
-					else if (ped.samples[i1]->pid == ped.samples[i2]->pid) { sharefather = true; checkshare = true; }
+					else if (ind1Index[i]->pid == ind2Index[i]->pid)
+					{
+						sharefather = true;
+						checkshare = true;
+					}
 					
 					// Have different father
-					else { sharefather = false; checkshare = true; }
+					else
+					{
+						sharefather = false;
+						checkshare = true;
+					}
 				}
 				
 				// Ind2 doesn't have father ID
-				else { sharefather = false; checkshare = true; }
+				else
+				{
+					sharefather = false;
+					checkshare = true;
+				}
 			}
 			
 			// Ind 1 doesn't have father listed
-			else if (ped.samples[i1]->pid == "0")
+			else if (ind1Index[i]->pid == "0")
 			{
 				// Ind2 does have a father
-				if (ped.samples[i2]->pid != "0")
+				if (ind2Index[i]->pid != "0")
 				{
 					// Ind2 paternal == Ind1 ID = parent child
-					if (ped.samples[i2]->pid == ped.samples[i1]->iid) specifiedRelationship[i] = PARCHLD;
+					if (ind2Index[i]->pid == ind1Index[i]->iid)
+					{
+						specifiedRelationship.push_back( PARCHLD );
+						continue;
+					}
 					
 					// Don't share father
-					else { sharefather = false; checkshare = true; }
+					else
+					{
+						sharefather = false;
+						checkshare = true;
+					}
 				}
 				
 				// If Ind2 has no father listed can't share father
-				else { sharefather = false; checkshare = true; }
+				else
+				{
+					sharefather = false;
+					checkshare = true;
+				}
 			}
 			
 			// Ind1 has mother ID
-			if (ped.samples[i1]->mid != "0")
+			if (ind1Index[i]->mid != "0")
 			{
 				// Ind1 MID == Ind2 IndID = parent child
-				if (ped.samples[i1]->mid == ped.samples[i2]->iid) specifiedRelationship[i] = PARCHLD;
+				if (ind1Index[i]->mid == ind2Index[i]->iid)
+				{
+					specifiedRelationship.push_back( PARCHLD );
+					continue;
+				}
 				
 				// Ind2 has mother ID
-				else if (ped.samples[i2]->mid != "0")
+				else if (ind2Index[i]->mid != "0")
 				{
 					// Ind2 mother ID == Ind2 IndID = parent child
-					if (ped.samples[i2]->mid == ped.samples[i1]->iid) specifiedRelationship[i] = PARCHLD;
+					if (ind2Index[i]->mid == ind1Index[i]->iid)
+					{
+						specifiedRelationship.push_back( PARCHLD );
+						continue;
+					}
 					
 					// Ind1 mother == Ind2 mother 
-					else if (ped.samples[i1]->mid == ped.samples[i2]->mid) { sharemother = true; checkshare = true; }
+					else if (ind1Index[i]->mid == ind2Index[i]->mid)
+					{
+						sharemother = true;
+						checkshare = true;
+					}
 					
 					// Ind1 different mother than Ind2
-					else { sharemother = false; checkshare = true; }
+					else
+					{
+						sharemother = false;
+						checkshare = true;
+					}
 				}
 				
 				// Ind1 has mother ID but Ind2 doesn't
-				else { sharemother = false; checkshare = true; }
+				else
+				{
+					sharemother = false;
+					checkshare = true;
+				}
 			}
 			
 			// Ind1 doesn't have mother ID
-			else if (ped.samples[i1]->mid == "0")
+			else if (ind1Index[i]->mid == "0")
 			{
 				// Ind2 has mother ID
-				if (ped.samples[i2]->mid != "0")
+				if (ind2Index[i]->mid != "0")
 				{
 					// Ind2 mother ID == Ind1 IndID
-					if (ped.samples[i2]->mid == ped.samples[i1]->iid) specifiedRelationship[i] = PARCHLD;
+					if (ind2Index[i]->mid == ind1Index[i]->iid)
+					{
+						specifiedRelationship.push_back( PARCHLD );
+						continue;
+					}
 					
 					// Ind2 mother ID isn't Ind1 IID
-					else { sharemother = false; checkshare = true; }
+					else
+					{
+						sharemother = false;
+						checkshare = true;
+					}
 				}
 				
-				else { sharemother = false; checkshare = true; }
+				else
+				{
+					sharemother = false;
+					checkshare = true;
+				}
 			}
 			
 			if (checkshare)
 			{
-				if (sharefather and sharemother) specifiedRelationship[i] = SIBS;
+				if (sharefather and sharemother) specifiedRelationship.push_back( SIBS );
+								
+				else if (sharefather or sharemother) specifiedRelationship.push_back( OTHERREL );
 				
-				else if (sharefather or sharemother) specifiedRelationship[i] = OTHERREL;
-				
-				else UNREL;
+				else specifiedRelationship.push_back( UNREL );
 			}
 		}
 	}
@@ -285,31 +431,32 @@ void Duo::specifiedRelationships( Ped &ped )
 
 void Duo::calculatedRelationships( )
 {
-	calculatedRelationship.resize( fid1.size(), 0 );
+	printLog("Getting calculated relationships\n");
 	
-	for (unsigned int i = 0; i < meanIbs.size(); ++i)
+	if (numCalculated() != size()) calculatedRelationship.reserve( size() );
+	
+	vector<double>::iterator meanIter = meanIbs.begin();
+	vector<double>::iterator sdIter = sdIbs.begin();
+	
+	while (meanIter < meanIbs.end())
 	{
+		double mean = *meanIter;
+		double sd = *sdIter;
 		
-		// Check identical
-		if (meanIbs[i] > IDENT_MEANCUTOFF and sdIbs[i] < IDENT_SDCUTOFF)
-		{
-			calculatedRelationship[i] = IDENT;
-		}
+		if (mean > IDENT_MEANCUTOFF and sd < IDENT_SDCUTOFF) calculatedRelationship.push_back( IDENT );
 		
-		// Check first degree
-		else if (sdIbs[i] > isFirstDegreeClassifier( meanIbs[i], sdIbs[i] ))
+		else if (sd > isFirstDegreeClassifier( mean, sd ))
 		{
-			if (sdIbs[i] < whichFirstDegreeClassifier( meanIbs[i], sdIbs[i] ))
-			{
-				calculatedRelationship[i] = PARCHLD;
-			}
+			if (sd < whichFirstDegreeClassifier( mean, sd )) calculatedRelationship.push_back( PARCHLD ); 
 			
-			else calculatedRelationship[i] = SIBS;
+			else calculatedRelationship.push_back( SIBS );
 		}
 		
-		// Later add other unrelated
+		// Methods for other relationships can go here
 		
-		// Unrelated
-		else calculatedRelationship[i] = UNREL;
+		else calculatedRelationship.push_back( UNREL );
+		
+		++meanIter;
+		++sdIter;
 	}
 }

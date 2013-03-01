@@ -1,6 +1,7 @@
+# Replace g++ with your compiler, or a direct link if necessary
 CXX = g++
 
-# Any custom compiler flags here ( -Wall, -g, etc)
+# Any custom compiler flags here , such as -Wall, march, mtune, -m32 or -m64, etc.
 CXXFLAGS = 
 
 # --------------------------------------------------------------------
@@ -10,9 +11,9 @@ CXXFLAGS =
 CXXFLAGS += -O3 -I.
 OUTPUT = snpduo
 
-SRC = Duo.cpp helper.cpp input.cpp options.cpp output.cpp parse.cpp snpduo.cpp
+SRC = duo.cpp helper.cpp input.cpp options.cpp output.cpp parse.cpp snpduo.cpp
 
-HDR = Duo.h helper.h input.h options.h output.h snpduo.h
+HDR = duo.h helper.h input.h options.h output.h snpduo.h
 
 OBJ = $(SRC:.cpp=.o)
 

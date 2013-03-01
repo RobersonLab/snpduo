@@ -9,16 +9,23 @@ using namespace std;
 
 // Custom headers
 #include "options.h"
-#include "Duo.h"
+#include "duo.h"
 #include "snpduo.h"
+#include "input.h"  // Gives chromosome macros
 
-// RELATIONSHIP const string comes from Duo.h
+// RELATIONSHIP const string comes from duo.h
 // Used to maintain flexibility in adding relationship classes
 
 // LOG declared in snpduo.cpp
 extern ofstream LOG;
 
-// FUNCTIONS
+const int PRECISE = 7; // used to specify precision for output
+
+//////////////////////////////////////////////////
+//
+// Log function
+//
+//////////////////////////////////////////////////
 void printLog( string s )
 {
 	LOG << s;
@@ -41,46 +48,50 @@ void Duo::printCounts()
 	string file = par::outfile + ".count";
 	
 	ofstream COUNTS;
-	COUNTS.open( file.c_str() );
+	COUNTS.open( file.c_str(), ios::out );
 	
-	printLog( "Writing pair-wise IBS counts to [ " + file + " ] ...");
+	if ( !COUNTS.is_open() or !COUNTS.good() ) error("Could not create count file [ " + file + " ]");
+	
+	printLog( "Writing pair-wise IBS counts to [ " + file + " ]\n");
 	
 	COUNTS << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2" << "\n";
 	
-	for (unsigned int i = 0; i < ibs0Count.size(); ++i)
-	{
-		COUNTS << fid1[i] << "," << iid1[i] << "," << fid2[i] << "," << iid2[i] << ",";
-		COUNTS << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "\n";
+	for (unsigned int i = 0; i < numCounts(); ++i)
+	{		
+		COUNTS 
+		<< ind1Index[i]->fid << "," << ind1Index[i]->iid << "," 
+		<< ind2Index[i]->fid << "," << ind2Index[i]->iid << "," 
+		<< ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "\n";
 	}
-	
-	printLog("done! \n");
 	
 	COUNTS.close();
 }
 
 void Duo::printMeanSD()
 {
-//	cout.setf(ios::fixed);
-	
 	string file = par::outfile + ".summary";
 	
 	ofstream MEANSD;
-	MEANSD.open( file.c_str() );
+	MEANSD.open( file.c_str(), ios::out );
 	
-	printLog("Writing pair-wise Mean and SD summary information to [ " + file + " ] ...");
+	if (!MEANSD.is_open() or !MEANSD.good()) error( "Could not create Mean / SD file [ " + file + " ]\n" );
 	
-	MEANSD.setf(ios::fixed);
+	MEANSD.setf( ios::fixed );
+	
+	printLog( "Writing pair-wise Mean and SD summary information to [ " + file + " ]\n" );
+	
+	MEANSD.setf( ios::fixed );
 	
 	MEANSD << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS" << "\n";
 	
-	for (unsigned int i = 0; i < meanIbs.size(); ++i)
+	for (unsigned int i = 0; i < numMean(); ++i)
 	{
-		MEANSD << fid1[i] << "," << iid1[i] << "," << fid2[i] << "," << iid2[i] << ",";
-		MEANSD << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ",";
-		MEANSD << setprecision(7) << meanIbs[i] << "," << setprecision(8) << sdIbs[i] << "\n"; 
+		MEANSD
+		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
+		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << "\n"; 
 	}
-	
-	printLog("done! \n");
 	
 	MEANSD.close();
 }
@@ -90,24 +101,25 @@ void Duo::printRelationships()
 	string file = par::outfile + ".specified";
 	
 	ofstream RELATE;
-	RELATE.open( file.c_str());
+	RELATE.open( file.c_str(), ios::out );
 	
-	printLog("Writing pair-wise relationships specified from input pedigrees to [ " + file + " ] ...");
+	if (!RELATE.is_open() or !RELATE.good()) error( "Couldn't create file [ " + file + " ]\n" );
 	
-	if (specifiedRelationship.size() == 0) error("No specified relationships found!");
+	printLog("Writing pair-wise relationships specified from input pedigrees to [ " + file + " ]\n");
+	
+	if (numSpecified() == 0) error( "No specified relationships found!" );
 	
 	RELATE << "FID1,IID1,FID2,IID2,SpecifiedRelationship" << "\n";
 	
-	for (unsigned int i = 0; i < specifiedRelationship.size(); ++i)
+	for (unsigned int i = 0; i < numSpecified(); ++i)
 	{
-		RELATE << fid1[i] << "," << iid1[i] << ",";
-		RELATE << fid2[i] << "," << iid2[i] << ",";
-		RELATE << RELATIONSHIP[ specifiedRelationship[i] ] << "\n";
+		RELATE 
+		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
+		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
+		 << RELATIONSHIP[ specifiedRelationship[i] ] << "\n";
 	}
 	
 	RELATE.close();
-	
-	printLog("done! \n");
 }
 
 void Duo::printSpecifiedAndCalculated()
@@ -115,23 +127,26 @@ void Duo::printSpecifiedAndCalculated()
 	string file = par::outfile + ".theoretical";
 	
 	ofstream THEORY;
-	THEORY.open( file.c_str() );
+	THEORY.open( file.c_str(), ios::out );
 	
-	printLog("Writing theoretical relationships to [ " + file + " ] ...");	
+	if (!THEORY.is_open() or !THEORY.good()) error( "Could not write to file [ " + file + " ]\n" );
+	
+	THEORY.setf( ios::fixed );
+	
+	printLog("Writing theoretical relationships to [ " + file + " ]\n");	
 	
 	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,SpecifiedRelationship,CalculatedRelationship" << "\n";
 	
-	for (unsigned int i = 0; i < calculatedRelationship.size(); ++i)
+	for (unsigned int i = 0; i < numCalculated(); ++i)
 	{
-		THEORY << fid1[i] << "," << iid1[i] << ",";
-		THEORY << fid2[i] << "," << iid2[i] << ",";
-		THEORY << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ",";
-		THEORY << meanIbs[i] << "," << sdIbs[i] << ",";
-		THEORY << RELATIONSHIP[ specifiedRelationship[i] ] << ",";
-		THEORY << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
+		THEORY
+		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
+		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+		 << RELATIONSHIP[ specifiedRelationship[i] ] << ","
+		 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 	}
-	
-	printLog("done! \n");
 	
 	THEORY.close();
 }
@@ -141,22 +156,25 @@ void Duo::printCalculatedOnly()
 	string file = par::outfile + ".calculated";
 	
 	ofstream THEORY;
-	THEORY.open( file.c_str() );
+	THEORY.open( file.c_str(), ios::out );
 	
-	printLog("Writing theoretical relationships to [ " + file + " ] ...");	
+	if (!THEORY.is_open() or !THEORY.good()) error( "Could not create file [ " + file + " ]\n" );
+	
+	THEORY.setf( ios::fixed );
+	
+	printLog( "Writing theoretical relationships to [ " + file + " ]\n" );	
 	
 	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,CalculatedRelationship" << "\n";
 	
-	for (unsigned int i = 0; i < calculatedRelationship.size(); ++i)
+	for (unsigned int i = 0; i < numCalculated(); ++i)
 	{
-		THEORY << fid1[i] << "," << iid1[i] << ",";
-		THEORY << fid2[i] << "," << iid2[i] << ",";
-		THEORY << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ",";
-		THEORY << meanIbs[i] << "," << sdIbs[i] << ",";
-		THEORY << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
+		THEORY
+		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
+		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+		 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 	}
-	
-	printLog("done! \n");
 	
 	THEORY.close();
 }
@@ -166,26 +184,29 @@ void Duo::printConflicted()
 	string file = par::outfile + ".conflicted";
 	
 	ofstream CONFLICTED;
-	CONFLICTED.open( file.c_str() );
+	CONFLICTED.open( file.c_str(), ios::out );
 	
-	printLog("Writing relationships that conflict with specified pedigrees to [ " + file + " ] ...");
+	if (!CONFLICTED.is_open() or !CONFLICTED.good()) error( "Could not create file [ " + file + " ]\n" );
+	
+	CONFLICTED.setf( ios::fixed );
+	
+	printLog( "Writing relationships that conflict with specified pedigrees to [ " + file + " ]\n" );
 	
 	CONFLICTED << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,SpecifiedRelationship,CalculatedRelationship" << "\n"; 
 	
-	for (unsigned int i = 0; i < fid1.size(); ++i)
+	for (unsigned int i = 0; i < numSpecified(); ++i)
 	{
-		if ( specifiedRelationship[i] != calculatedRelationship[i] )
+		if (specifiedRelationship[i] != calculatedRelationship[i])
 		{
-			CONFLICTED << fid1[i] << "," << iid1[i] << ",";
-			CONFLICTED << fid2[i] << "," << iid2[i] << ",";
-			CONFLICTED << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ",";
-			CONFLICTED << meanIbs[i] << "," << sdIbs[i] << ",";
-			CONFLICTED << RELATIONSHIP[ specifiedRelationship[i] ] << ",";
-			CONFLICTED << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
+			CONFLICTED
+			 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
+			 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
+			 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+			 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+			 << RELATIONSHIP[ specifiedRelationship[i] ] << ","
+			 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 		}
 	}
-	
-	printLog("done! \n");
 	
 	CONFLICTED.close();
 }
@@ -200,29 +221,29 @@ void Ped::print()
 	string file = par::outfile + ".ped";
 	
 	ofstream PED;
-	PED.open( file.c_str() );
+	PED.open( file.c_str(), ios::out );
 	
-	printLog("Writing ped file [ " + file + " ] ...");
+	if (!PED.is_open() or !PED.good()) error("Could not write to file [ " + file + " ]\n");
 	
-	for (unsigned int i = 0; i < par::personcount; ++i)
+	printLog("Writing ped file [ " + file + " ]\n");
+	
+	for (unsigned int i = 0; i < numPeople(); ++i)
 	{
-		PED << samples[i]->fid << " " << samples[i]->iid << " ";
-		PED << samples[i]->pid << " " << samples[i]->mid << " ";
-		PED << samples[i]->sex << " " << samples[i]->pheno;
+		PED
+		 << samples[i]->fid << " " << samples[i]->iid << " "
+		 << samples[i]->pid << " " << samples[i]->mid << " "
+		 << samples[i]->sex << " " << samples[i]->pheno;
 		
 		// REQUIRES REWRITE FOR NEW BOOLEAN EXPRESSION
 		for (unsigned int j = 0; j < par::snpcount; ++j)
 		{
-			PED << " " << samples[i]->a1[j];
-			PED << " " << samples[i]->a2[j];
+			PED << fileGenotypeString( i, j );
 		}
 		
 		PED << "\n";
 	}
 	
 	PED.close();
-	
-	printLog("done!");
 }
 
 //////////////////////////////////////////////////
@@ -235,20 +256,21 @@ void Map::print()
 	string file = par::outfile + ".map";
 	
 	ofstream MAP;
-	MAP.open( file.c_str() );
+	MAP.open( file.c_str(), ios::out );
 	
-	printLog("Writing map file [ " + file + " ] ...");
+	if (!MAP.is_open() or !MAP.good()) error( "Couldn't write map file [ " + file + " ]\n" );
 	
-	for (int i = 0; i < par::snpcount; ++i)
+	printLog("Writing map file [ " + file + " ]\n");
+	
+	for (unsigned int i = 0; i < numMarkers(); ++i)
 	{
-		MAP << rsid[i] << " " << chr[i] << " ";
-		MAP << genetic[i] << " ";
-		MAP << position[i] << "\n";
+		MAP
+		 << rsid[i] << " " << chr[i] << " "
+		 << genetic[i] << " "
+		 << position[i] << "\n";
 	}
 	
 	MAP.close();
-	
-	printLog("done!");
 }
 
 //////////////////////////////////////////////////
@@ -262,35 +284,39 @@ void writeTranspose( Ped &ped, Map &map )
 	string file = par::outfile + ".tfam";
 	
 	ofstream TFAM;
-	TFAM.open( file.c_str() );
+	TFAM.open( file.c_str(), ios::out );
 	
-	printLog("Writing tfam file [ " + file + " ] ...");
+	if (!TFAM.is_open() or !TFAM.good()) error( "Couldn't write TFAM file [ " + file + " ]\n" );
 	
-	for (int i = 0; i < par::personcount; ++i)
+	printLog( "Writing tfam file [ " + file + " ]\n" );
+	
+	for (unsigned int i = 0; i < ped.numPeople(); ++i)
 	{
-		TFAM << ped.samples[i]->fid << " " << ped.samples[i]->iid << " ";
-		TFAM << ped.samples[i]->pid << " " << ped.samples[i]->mid << " ";
-		TFAM << ped.samples[i]->sex << " " << ped.samples[i]->pheno << "\n";
+		TFAM
+		 << ped.samples[i]->fid << " " << ped.samples[i]->iid << " "
+		 << ped.samples[i]->pid << " " << ped.samples[i]->mid << " "
+		 << ped.samples[i]->sex << " " << ped.samples[i]->pheno << "\n";
 	}
 	
 	TFAM.close();
-	
-	printLog("done!\n");
 	
 	// Write the TPED file
 	file = par::outfile + ".tped";
 	
 	ofstream TPED;
-	TPED.open( file.c_str() );
+	TPED.open( file.c_str(), ios::out );
 	
-	printLog("Writing tped file [ " + file + " ] ...");
+	if (!TPED.is_open() or !TPED.good()) error( "Couldn't write TPED file [ " + file + " ]\n" );
 	
-	for (int i = 0; i < par::snpcount; ++i)
+	printLog( "Writing tped file [ " + file + " ]\n" );
+	
+	for (unsigned int i = 0; i < map.numMarkers(); ++i)
 	{
-		TPED << map.chr[i] << " ";
-		TPED << map.rsid[i] << " ";
-		TPED << map.genetic[i] << " ";
-		TPED << map.position[i];
+		TPED
+		 << map.chr[i] << " "
+		 << map.rsid[i] << " "
+		 << map.genetic[i] << " "
+		 << map.position[i];
 		
 		for (int j = 0; j < par::personcount; ++j)
 		{
@@ -299,8 +325,6 @@ void writeTranspose( Ped &ped, Map &map )
 		
 		TPED << "\n";
 	}
-	
-	printLog("done!\n");
 }
 
 //////////////////////////////////////////////////
@@ -313,9 +337,9 @@ void writeTranspose( Ped &ped, Map &map )
 // 	string file = par::outfile + ".bfam";
 // 	
 // 	ofstream BFAM;
-// 	BFAM.open( file.c_str() );
+//	BFAM.open( file.c_str(), ios::in );
 // 	
-// 	printLog("Writing bfam file [ " + file + " ] ...");
+// 	printLog("Writing bfam file [ " + file + " ]\n");
 // 	
 // 	for (int i = 0; i < par::personcount; ++i)
 // 	{
@@ -326,15 +350,13 @@ void writeTranspose( Ped &ped, Map &map )
 // 	
 // 	BFAM.close();
 // 	
-// 	printLog("done!\n");
-// 	
 // 	// Write the BMAP file
 // 	file = par::outfile + ".bmap";
 // 	
 // 	ofstream BMAP;
-// 	BMAP.open( file.c_str() );
+//	BMAP.open( file.c_str(), ios::in );
 // 	
-// 	printLog("Writing bmap file [ " + file + " ] ...");
+// 	printLog("Writing bmap file [ " + file + " ]\n");
 // 	
 // 	for (int i = 0; i < par::snpcount; ++i)
 // 	{
@@ -347,15 +369,13 @@ void writeTranspose( Ped &ped, Map &map )
 // 	
 // 	BMAP.close();
 // 	
-// 	printLog("done!\n");
-// 	
 // 	// Write BPED file
 // 	file = par::outfile + ".bped";
 // 	
 // 	ofstream BPED;
-// 	BPED.open( file.c_str(), ios::binary | ios::app );
+//	BPED.open( file.c_str(), ios::binary | ios::app );
 // 	
-// 	printLog("Writing bped file [ " + file + " ] ...");
+// 	printLog("Writing bped file [ " + file + " ]\n");
 // 	
 // 	// Write options
 // 	BPED.write( reinterpret_cast<char*>( &par::snpcount ), sizeof(int) );
@@ -474,13 +494,12 @@ void writeTranspose( Ped &ped, Map &map )
 // 	}
 // 	
 // 	BPED.close();
-// 	
-// 	printLog("done!\n");
 // }
 
 //////////////////////////////////////////////////
 //
-//
+// Function to write data in a SNPduo compatible
+// AA/AB/BB coding nomenclature
 //
 //////////////////////////////////////////////////
 void writeForWeb( Ped &ped, Map &map )
@@ -489,30 +508,31 @@ void writeForWeb( Ped &ped, Map &map )
 	string geno = "";
 	string chrTmp = "";
 	
-	printLog("Writing data to Custom format file for Web SNPduo to file [ " + file + "  ] ...");
+	printLog( "Writing data to Custom format file for Web SNPduo to file [ " + file + "  ]\n" );
 	
 	// Open file
 	ofstream WEB;
-	WEB.open( file.c_str() );
-	if (!WEB.is_open()) error( "Cannot open Web SNPduo output [ " + file + " ]");
+	WEB.open( file.c_str(), ios::out );
+	
+	if (!WEB.is_open() or !WEB.good()) error( "Cannot write Web SNPduo output [ " + file + " ]");
 	
 	// Write headers
 	WEB << "Chromosome,Physical.Position,RSID,A/B";
 	
-	for (int i = 0; i < par::personcount; ++i)
+	for (unsigned int i = 0; i < ped.numPeople(); ++i)
 	{
 		WEB << "," << ped.samples[i]->fid << "_" << ped.samples[i]->iid;
 	}
 	WEB << "\n";
 	
 	// Print data
-	for (int i = 0; i < par::snpcount; ++i)
+	for (unsigned int i = 0; i < map.numMarkers(); ++i)
 	{
 		if (map.chr[i] < 23) WEB << map.chr[i];
-		else if (map.chr[i] == 23) WEB << "X";
-		else if (map.chr[i] == 24) WEB << "Y";
-		else if (map.chr[i] == 25) WEB << "XY";
-		else if (map.chr[i] == 26) WEB << "MT";
+		else if (map.chr[i] == XINT) WEB << "X";
+		else if (map.chr[i] == YINT) WEB << "Y";
+		else if (map.chr[i] == XYINT) WEB << "XY";
+		else if (map.chr[i] == MTINT) WEB << "MT";
 		
 		WEB << "," << map.position[i] << "," << map.rsid[i] << ",";
 		
@@ -539,7 +559,7 @@ void writeForWeb( Ped &ped, Map &map )
 			}
 		}
 		
-		for (int j = 0; j < par::personcount; ++j)
+		for (unsigned int j = 0; j < ped.numPeople(); ++j)
 		{
 			geno = "";
 			
@@ -578,6 +598,4 @@ void writeForWeb( Ped &ped, Map &map )
 		
 	// Close file
 	WEB.close();
-	
-	printLog("done!\n");
 }

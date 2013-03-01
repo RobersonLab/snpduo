@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cstdio>
 #include <cerrno>
+#include <sstream>
 
 // Namespace
 using namespace std;
@@ -18,31 +19,30 @@ using namespace std;
 // Functions for command-line argument parser
 //
 //////////////////////////////////////////////////
-CArgs::CArgs(int n, char *params[])
+CArgs::CArgs( int n, char *params[] ): parametercount( n )
 {
-	parametercount = n;
-	parsed.resize( n );
-	parameters.resize( n );
+	parsed.reserve( n );
+	parameters.reserve( n );
 	
-	for (int i = 0; i < n; ++i) parsed[i] = false;
+	for (int i = 0; i < n; ++i) parsed.push_back( false );
 	
 	parsed[0] = true; // Filename automatically returned
 	
-	for (int i = 0; i < n; ++i) parameters[i] = params[i];
+	for (int i = 0; i < n; ++i) parameters.push_back( params[i] );
 }
 
 void CArgs::CheckSwitches()
 {
 	vector<int> badoptions;
 	
-	for (int i = 0; i < parametercount; ++i)
+	for (int i = 0; i < size(); ++i)
 	{
-		if (parsed[i] == false) badoptions.push_back(i);
+		if (parsed[i] == false) badoptions.push_back( i );
 	}
 	
 	if (badoptions.size())
 	{
-		printLog("Unrecognized command-line switch(es):\n");
+		printLog( "Unrecognized command-line switch(es):\n" );
 		for (unsigned int i = 0; i < badoptions.size(); ++i)
 		{
 			printLog(parameters[ badoptions[i] ] + "\n");
@@ -52,9 +52,9 @@ void CArgs::CheckSwitches()
 	}
 }
 
-bool CArgs::Search(string s)
+bool CArgs::Search( string s )
 {
-	for (int i = 0; i < parametercount; ++i)
+	for (unsigned int i = 0; i < size(); ++i)
 	{
 		if (parameters[i] == s)
 		{
@@ -66,33 +66,33 @@ bool CArgs::Search(string s)
 	return false;
 }
 
-int CArgs::Index(string s)
+int CArgs::Index( string s )
 {
-	for (int i = 0; i < parametercount; ++i)
+	for (unsigned int i = 0; i < size(); ++i)
 	{
-		if (parameters[i] == s and i + 1 < parametercount)
+		if (parameters[i] == s and i + 1 < this->size())
 		{
 			parsed[i + 1] = true;
 			return i + 1;
 		}
 	}
 	
-	error("Missing argument for " + s);
+	error( "Missing argument for " + s );
 }
 
 void CArgs::print()
 {
-	printLog("Options from command line:\n");
-	for (int i = 0; i < parametercount; ++i)
+	printLog( "Options from command line:\n" );
+	for (unsigned int i = 0; i < size(); ++i)
 	{
-		printLog(parameters[i] + "\n");
+		printLog( parameters[i] + "\n" );
 	}
 }
 
 void CArgs::printArgs()
 {
-	printLog("Command-line Options Set:\n");
-	for (unsigned int i = 0; i < clinelist.size(); ++i)
+	printLog( "Command-line Options Set:\n" );
+	for (unsigned int i = 0; i < clineSize(); ++i)
 	{
 		printLog( clinelist[i] + " " + clinevalue[i] + "\n");
 	}
@@ -105,17 +105,16 @@ void CArgs::printArgs()
 // Accessory functions for handling errors
 //
 //////////////////////////////////////////////////
-
 void error (string s)
 {
-	printLog("\nError: " +  s);
+	printLog( "\nError: " +  s );
 	
-	exit(1);
+	exit( 1 );
 }
 
 void shutdown()
 {
-	exit (0);
+	exit( 0 );
 }
 
 //////////////////////////////////////////////////
@@ -124,7 +123,6 @@ void shutdown()
 // together in a string and returns a bool for
 // whether a string was actually read
 //////////////////////////////////////////////////
-
 bool getString (ifstream &f, string &s)
 {
 	s = "";
@@ -133,7 +131,7 @@ bool getString (ifstream &f, string &s)
 	
 	while (1)
 	{
-		f.get(c);
+		f.get( c );
 		
 		if (c == ' ' or c == '\t' or c == '\n' or f.eof()) break;
 		else if (c == '\r') continue;
@@ -155,7 +153,7 @@ bool getWhiteSpacePaddedString (ifstream &f, string &s, char &c)
 	
 	while (1)
 	{
-		f.get(c);
+		f.get( c );
 		
 		if (c == '\n' or f.eof()) break;
 		else if (c == '\r') continue;
@@ -172,4 +170,30 @@ bool getWhiteSpacePaddedString (ifstream &f, string &s, char &c)
 	}
 	
 	return read;
+}
+
+bool getChar (ifstream &f, char &c)
+{
+	while (1)
+	{
+		f.get( c );
+		
+		if (c == '\n' or f.eof()) return false;
+		else if (c == ' ' or c == '\t' or c == '\r') continue;
+		else return true;
+	}
+}
+
+string int2String( const int i )
+{
+	stringstream ss;
+	ss << i;
+	return ss.str();
+}
+
+string dbl2String( const double d )
+{
+	stringstream ss;
+	ss << d;
+	return ss.str();
 }

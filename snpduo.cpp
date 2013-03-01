@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 
 // namespace
@@ -14,13 +13,13 @@ using namespace std;
 #include "helper.h"
 #include "options.h"
 #include "input.h"
-#include "Duo.h"
+#include "duo.h"
 #include "output.h"
 
 // Macros
-const string VERSION = "1.00"; // 4 char
-const string RELEASE = "b"; // 1 char. Blank for actual release. p for prelease or test. a for alpha. b for beta
-const string DATE = "2009/Feb/18"; // 10 char. In YYYY/MM/DD format
+const string VERSION = "1.01"; // 4 char
+const string RELEASE = "b"; // 1 char. Blank for full release. a for alpha. b for beta
+const string DATE = "2009/Mar/09"; // 10 char. In YYYY/MMM/DD format
 
 // Externalized LOG declaration
 ofstream LOG;
@@ -30,6 +29,7 @@ int main (int argc, char *argv[])
 {
 	// Set up variables to time the program
 	clock_t start_time, end_time;
+	time_t sysTime;
 	start_time = clock();
 	
 	// Set Options before continuing
@@ -48,7 +48,6 @@ int main (int argc, char *argv[])
 	Ped ped;
 	Map map;
 	Duo duo;
-	stringstream ss;
 	
 	printLog("\n" 
 	"|---------------------------------------|\n" 
@@ -57,7 +56,11 @@ int main (int argc, char *argv[])
 	"| (c) 2007-2009 Roberson and Pevsner    |\n" 
 	"|---------------------------------------|\n\n");
 	
-	printLog("This text is being written to [ " + par::outfile + ".log" + " ]\n");
+	printLog( "This text is being written to [ " + par::outfile + ".log" + " ]\n" );
+	
+	sysTime = time( 0 );
+	
+	printLog( "\nAnalysis started: " + (string) ctime( &sysTime ) + "\n");
 	
 	options.CheckSwitches();
 	CheckMinimumInput();
@@ -66,8 +69,8 @@ int main (int argc, char *argv[])
 	
 	if (par::pedfile != "null")
 	{
-		readMapFile(map);
-		readPedFile(ped);
+		readMapFile( map );		
+		readPedFile( ped );
 	}
 	else if (par::tpedfile != "null")
 	{
@@ -81,10 +84,10 @@ int main (int argc, char *argv[])
 // 	}
 	else if (par::genomefile != "null")
 	{
-		readPLINKGenome( duo );
+		readPLINKGenome( duo, ped );
 	}
 	
-	if (par::recode)
+	if (par::recode and par::genomefile == "null")
 	{
 		if (par::transpose) 
 		{
@@ -105,7 +108,7 @@ int main (int argc, char *argv[])
 		}
 	}
 	
-	if ( (par::counts or par::summary or par::calculated or par::conflicting) and !par::genome) duo.getCounts( ped );
+	if ((par::counts or par::summary or par::calculated or par::conflicting) and !par::genome) duo.getCounts( ped );
 	if (par::counts) duo.printCounts();
 	
 	if (par::summary or par::calculated or par::conflicting) duo.getMeanAndSDFromCounts();
@@ -122,9 +125,9 @@ int main (int argc, char *argv[])
 	
 	end_time = clock();
 	
-	ss << (end_time - start_time) / CLOCKS_PER_SEC;
-	
-	printLog("\nAnalysis completed in " + ss.str() + " seconds\n");
+	sysTime = time( 0 );
+	printLog( "\nAnalysis ended: " + (string) ctime( &sysTime ));
+	printLog( "Run time: " + dbl2String( (double) (end_time - start_time) / CLOCKS_PER_SEC )  + " seconds\n" );
 	
 	return 0;
 }
@@ -134,14 +137,30 @@ int main (int argc, char *argv[])
 // separate file so main functions are untainted
 // by unrelated code
 //////////////////////////////////////////////////
-int Ped::findPerson(string &famID, string &indID)
+int Ped::findPerson( string &famID, string &indID )
 {
-	for (int i = 0; i < par::personcount; ++i)
+	for (int i = 0; i < numPeople(); ++i)
 	{
 		if (samples[i]->fid == famID and samples[i]->iid == indID) return i;
 	}
 	
-	error("Unable to find individual with family ID " + famID + " and individual ID " + indID);
+	error( "Unable to find individual with family ID " + famID + " and individual ID " + indID );
+}
+
+bool Ped::boolHavePerson( string &famID, string &indID, int &index )
+{
+	index = 0;
+	
+	for (unsigned int i = 0; i < numPeople(); ++i)
+	{
+		if (samples[i]->fid == famID and samples[i]->iid == indID)
+		{
+			index = i;
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 string Ped::fileGenotypeString( int person, int snp )

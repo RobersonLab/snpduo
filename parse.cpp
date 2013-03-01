@@ -155,7 +155,7 @@ void setOptions (CArgs &arg)
 	{
 		par::genome = true;
 		
-		par::genomefile = arg.parameters[ arg.Index("--plinkgenome") ];
+		par::genomefile = arg.parameters[ arg.Index("--genome") ];
 		
 		arg.clinelist.push_back("--genome");
 		arg.clinevalue.push_back(" ");

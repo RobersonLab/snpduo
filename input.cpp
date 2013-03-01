@@ -1,7 +1,6 @@
 // Standard libraries
 #include <string>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
 #include <bitset>
 
@@ -22,37 +21,170 @@ using namespace std;
 //////////////////////////////////////////////////
 // Ped / Map file handling
 //////////////////////////////////////////////////
-void readPedFile(Ped &ped)
+// void readMapFile (Map &m)
+// {
+// 	printLog( "Reading map file [ " + par::mapfile + " ]\n" );
+// 	
+// 	string buffer = " "; // For reading chars into strings
+// 	int linecount = 0; // Count for markers
+// 	bool stringBool = false; // bool to determine if value read
+// 	
+// 	ifstream MAP( par::mapfile.c_str(), ios::in );
+// 	
+// 	if (!MAP.is_open() or !MAP.good()) error ("Map file [ " + par::mapfile + " ] cannot be read");
+// 	
+// 	while (1)
+// 	{
+// 		// Check EOF
+// 		if ( MAP.eof() ) break;
+// 		
+// 		// Read chr
+// 		stringBool = getString( MAP, buffer );
+// 		
+// 		if (stringBool)
+// 		{
+// 			if (buffer.substr(0,1) == "#") // If line starts with comment
+// 			{
+// 				char comment = ' ';
+// 				while (comment != '\n' or !MAP.eof()) MAP.get( comment );
+// 				
+// 				continue;
+// 			}
+// 			
+// 			else m.chr.push_back( intChrFromString( buffer ) );
+// 		}
+// 		else continue;
+// 		
+// 		// Read RSID and pushback
+// 		stringBool = getString( MAP, buffer );
+// 		if (stringBool) m.rsid.push_back( buffer );
+// 		
+// 		else error("No RSID for line " + int2String(linecount + 1));
+// 		
+// 		// Read Genetic Distance if used
+// 		if (!par::map3)
+// 		{
+// 			stringBool = getString( MAP, buffer );
+// 			
+// 			if(stringBool) m.genetic.push_back( atoi( buffer.c_str() ) );
+// 			
+// 			else error("No Genetic Distance for line " + int2String( linecount + 1) + ". Specify --map3 if map file doesn't include genetic distance");
+// 		}
+// 		
+// 		else m.genetic.push_back( 0 );
+// 		
+// 		// Read position
+// 		stringBool = getString( MAP, buffer );
+// 		if (stringBool) m.position.push_back( atoi( buffer.c_str() ) );
+// 		
+// 		else error ("No physical position for line " + int2String( linecount + 1));
+// 		
+// 		// Increment Line
+// 		++linecount;	
+// 	}
+// 	
+// 	MAP.close();
+// 	
+// 	par::snpcount = linecount;
+//	
+//	printLog( int2String( linecount ) + " markers read\n" );
+// }
+
+void readMapFile (Map &m)
 {
-	printLog( "Reading ped file [ " + par::pedfile + " ] ..." );
+	printLog( "Reading map file [ " + par::mapfile + " ]\n" );
 	
-	// Resize appropriate vectors
-	ped.hasAllele1.resize( par::snpcount );
-	ped.hasAllele2.resize( par::snpcount );
-	ped.allele1.resize( par::snpcount );
-	ped.allele2.resize( par::snpcount );
+	string buffer = " "; // For reading chars into strings
+	int linecount = 0; // Count for markers
 	
-	string buffer;
-	stringstream ss;
-	int linecount = 0;
-	bool stringBool = false;
+	ifstream MAP( par::mapfile.c_str(), ios::in );
 	
-	ifstream myfile(par::pedfile.c_str());
-	
-	if (!myfile.is_open()) error ("Ped file [ " + par::pedfile + " ] couldn't be opened");
+	if (!MAP.is_open() or !MAP.good()) error ("Map file [ " + par::mapfile + " ] cannot be read");
 	
 	while (1)
 	{
+		// Check EOF
+		if ( MAP.eof() ) break;
 		
+		// Read Chr
+		if ( getString( MAP, buffer ) )
+		{
+			if (buffer.substr(0,1) == "#") // If line starts with comment
+			{
+				char comment = ' ';
+				while (comment != '\n' or !MAP.eof()) MAP.get( comment );
+				
+				continue;
+			}
+			
+			else m.chr.push_back( intChrFromString( buffer ) );
+		}
+		else continue;
 		
+		// Read RSID and pushback
+		if ( getString( MAP, buffer ) ) m.rsid.push_back( buffer );
+		
+		else error("No RSID for line " + int2String( linecount + 1 ));
+		
+		// Read Genetic Distance if used
+		if (!par::map3)
+		{
+			if( getString( MAP, buffer ) ) m.genetic.push_back( atoi( buffer.c_str() ) );
+			
+			else error("No Genetic Distance for line " + int2String( linecount + 1 ) + ". Specify --map3 if map file doesn't include genetic distance");
+		}
+		
+		else m.genetic.push_back( 0 );
+		
+		// Read position
+		if ( getString( MAP, buffer ) ) m.position.push_back( atoi( buffer.c_str() ) );
+		
+		else error ("No physical position for line " + int2String( linecount + 1 ));
+		
+		++linecount; // Used to count SNPs
+	}
+	
+	MAP.close();
+	
+	par::snpcount = linecount;
+	
+	printLog( int2String( linecount ) + " markers read\n\n" );
+}
+
+// VERSION 1
+void readPedFile(Ped &ped)
+{
+	printLog( "Reading ped file [ " + par::pedfile + " ]\n" );
+	
+	// Reserve appropriate vectors
+	ped.hasAllele1.reserve( par::snpcount );
+	ped.hasAllele2.reserve( par::snpcount );
+	ped.allele1.reserve( par::snpcount );
+	ped.allele2.reserve( par::snpcount );
+	
+	for (int i = 0; i < par::snpcount; ++i) ped.hasAllele1.push_back( false );
+	for (int i = 0; i < par::snpcount; ++i) ped.hasAllele2.push_back( false );
+	for (int i = 0; i < par::snpcount; ++i) ped.allele1.push_back( 'N' );
+	for (int i = 0; i < par::snpcount; ++i) ped.allele2.push_back( 'N' );
+	
+	string buffer = " ";
+	int linecount = 0;
+	bool stringBool = false;
+	
+	ifstream PED( par::pedfile.c_str(), ios::in );
+	
+	if (!PED.is_open() or !PED.good()) error( "Ped file [ " + par::pedfile + " ] cannot be read" );
+	
+	while ( 1 )
+	{
 		// Check end of file
-		if (myfile.eof()) break;
+		if (PED.eof()) break;
 		
 		// Make a new Person
 		Person *per = new Person;
 		
 		// Read FID
-		stringBool = getString(myfile, buffer);
+		stringBool = getString( PED, buffer );
 		
 		if (stringBool) // If characters were read
 		{
@@ -61,114 +193,82 @@ void readPedFile(Ped &ped)
 				delete per;
 				
 				char comment = ' ';
-				while (comment != '\n' and  !myfile.eof())
+				while (comment != '\n' and  !PED.eof())
 				{
-					myfile.get(comment);
+					PED.get( comment );
 				}
 				continue;
 			}
-			else
-			{
-				per->fid = buffer;
-			}
+			else per->fid = buffer;
 		}
-		else
-		{
-			continue;
-		}
+		else continue;
 		
 		// Read IID
-		stringBool = getString(myfile, buffer);
+		stringBool = getString( PED, buffer );
 		if (stringBool) per->iid = buffer;
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Individual ID for line " + ss.str());
+			error( "No Individual ID for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read PID
-		stringBool = getString(myfile, buffer);
+		stringBool = getString( PED, buffer );
 		if (stringBool) per->pid = buffer;
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Paternal ID for line " + ss.str());
+			error( "No Paternal ID for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read MID
-		stringBool = getString( myfile, buffer );
+		stringBool = getString( PED, buffer );
 		if (stringBool) per->mid = buffer;
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Maternal ID for line " + ss.str());
+			error( "No Maternal ID for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read Sex
-		stringBool = getString( myfile, buffer );
+		stringBool = getString( PED, buffer );
 		if (stringBool)
 		{
-			if (buffer == "1")
-			{
-				per->sex = 1;
-			}
-			else if (buffer == "2")
-			{
-				per->sex = 2;
-			}
-			else
-			{
-				per->sex = 0;
-			}
+			if (buffer == "1") per->sex = 1;
+			else if (buffer == "2") per->sex = 2;
+			else per->sex = 0;
 		}
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Sex Code for  line " + ss.str());
+			error( "No Sex Code for  line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read Phenotype
-		stringBool = getString( myfile, buffer);
+		stringBool = getString( PED, buffer);
 		if (stringBool)
 		{
-			if (buffer == "1")
-			{
-				per->pheno = 1;
-			}
-			else if (buffer == "2")
-			{
-				per->pheno = 2;
-			}
-			else
-			{
-				per->pheno = 0;
-			}
+			if (buffer == "1") per->pheno = 1;
+			else if (buffer == "2") per->pheno = 2;
+			else per->pheno = 0;
 		}
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Phenotype data for line " + ss.str());
+			error( "No Phenotype data for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read genotypes until end of line
 		// Setup important variables first
 		bool doa1 = true;
-		per->a1.resize( par::snpcount );
-		per->a2.resize( par::snpcount );
-		per->hasGenotype.resize( par::snpcount );
 		int vectorcount = 0;
 		char c = ' ';
 
 		while (1)
 		{			
-			myfile.get(c);
+			PED.get( c );
 			if (c == ' ' or c == '\t' or c == '\r') continue;
-			if (c == '\n' or myfile.eof()) break;
+			if (c == '\n' or PED.eof()) break;
 			
 			if (!ped.hasAllele1[ vectorcount ] and c != '0')
 			{
@@ -185,53 +285,39 @@ void readPedFile(Ped &ped)
 			{
 				if (c == '0')
 				{
-					per->hasGenotype[ vectorcount ] = false;
-					per->a1[ vectorcount ] = false;
+					per->hasGenotype.push_back( false );
+					per->a1.push_back( false );
 				}
 				else if (c == ped.allele1[ vectorcount ])
 				{
-					per->hasGenotype[ vectorcount ] = true;
-					per->a1[ vectorcount ] = false;
+					per->hasGenotype.push_back( true );
+					per->a1.push_back( false );
 				}
 				else if (c == ped.allele2[ vectorcount ])
 				{
-					per->hasGenotype[ vectorcount ] = true;
-					per->a1[ vectorcount ] = true;
+					per->hasGenotype.push_back( true );
+					per->a1.push_back( true );
 				}
-				else
-				{
-					ss << linecount + 1;
-					string linenum = ss.str();
-					ss << vectorcount + 1;
-					string snpnum = ss.str();
-					
-					error("\nSNP " + snpnum + " allele 1, line " + linenum + ". More than two SNP alleles detected in population:\n'" + ped.allele1[ vectorcount] + "' '" + ped.allele2[ vectorcount ] + "' '" + c + "'");
-				}
+				else error("\nSNP " + int2String( vectorcount + 1) + " allele 1, line " + int2String( linecount + 1 ) + ". More than two SNP alleles detected in population:\n'" + ped.allele1[ vectorcount] + "' '" + ped.allele2[ vectorcount ] + "' '" + c + "'");
+				
 				doa1 = false;
 			}
 			else
 			{
 				if (c == '0')
 				{
-					per->a2[ vectorcount ] = false;
+					per->a2.push_back( false );
 				}
 				else if (c == ped.allele1[ vectorcount ])
 				{
-					per->a2[ vectorcount ] = false;
+					per->a2.push_back( false );
 				}
 				else if (c == ped.allele2[ vectorcount ])
 				{
-					per->a2[ vectorcount ] = true;
+					per->a2.push_back( true );
 				}
-				else
-				{
-					ss << linecount + 1;
-					string linenum = ss.str();
-					ss << vectorcount + 1;
-					string snpnum = ss.str();
-					
-					error("\nSNP " + snpnum + " allele 2, line " + linenum + ". More than two SNP alleles detected in population:\n'" + ped.allele1[ vectorcount] + "' '" + ped.allele2[ vectorcount ] + "' '" + c + "'");
-				}
+				else error("\nSNP " + int2String( vectorcount + 1) + " allele 2, line " + int2String( linecount + 1 ) + ". More than two SNP alleles detected in population:\n'" + ped.allele1[ vectorcount] + "' '" + ped.allele2[ vectorcount ] + "' '" + c + "'");
+				
 				doa1 = true;
 				++vectorcount;
 			}
@@ -244,161 +330,56 @@ void readPedFile(Ped &ped)
 		ped.samples.push_back( per );
 	}
 	
-	myfile.close();
+	PED.close();
 	
 	par::personcount = linecount;
 	
-	printLog( "done!\n" );
-}
-
-void readMapFile (Map &m)
-{
-	printLog( "Reading map file [ " + par::mapfile + " ] ..." );
-	
-	string buffer; // For reading chars into strings
-	stringstream ss; // For string streaming values to error
-	int linecount = 0; // Count for markers
-	bool stringBool = false; // bool to determine if value read
-	
-	ifstream myfile(par::mapfile.c_str());
-	
-	if (!myfile.is_open()) error ("Map file [ " + par::mapfile + " ] couldn't be opened");
-	
-	while (1)
-	{
-		// Check EOF
-		if (myfile.eof()) break;
-		
-		// Read chr
-		stringBool = getString(myfile, buffer);
-		
-		if (stringBool)
-		{
-			if (buffer.substr(0,1) == "#") // If line starts with comment
-			{
-				char comment = ' ';
-				while (comment != '\n' or !myfile.eof())
-				{
-					myfile.get(comment);
-				}
-				continue;
-			}
-			else
-			{
-				m.chr.push_back( intChrFromString( buffer ) );
-			}
-		}
-		else continue;
-		
-		// Read RSID and pushback
-		stringBool = getString(myfile, buffer);
-		if (stringBool) m.rsid.push_back( buffer );
-		else
-		{
-			ss << linecount + 1;
-			error("No RSID for line " + ss.str());
-		}
-		
-		// Read Genetic Distance if used
-		if (!par::map3)
-		{
-			stringBool = getString(myfile, buffer);
-			
-			if(stringBool) m.genetic.push_back( atoi( buffer.c_str() ) );
-			else
-			{
-				ss << linecount + 1;
-				error("No Genetic Distance for line " + ss.str() + ". Specify --map3 if mapfile doesn't include genetic distance");
-			}
-		}
-		else m.genetic.push_back( 0 );
-		
-		// Read position
-		stringBool = getString(myfile, buffer);
-		if (stringBool)
-		{
-			int tmp = atoi( buffer.c_str() );
-			
-			if (tmp < 0)
-			{
-				m.genetic.pop_back();
-				m.rsid.pop_back();
-				m.chr.pop_back();
-				
-				char skip = ' ';
-				while (skip != '\n' or !myfile.eof())
-				{
-					myfile.get(skip);
-				}
-				continue;
-			}
-			else
-			{
-				m.position.push_back( tmp );
-			}
-		}
-		else
-		{
-			ss << linecount + 1;
-			error ("No physical position for line " + ss.str());
-		}
-		
-		// Increment Line
-		++linecount;	
-	}
-	
-	myfile.close();
-	
-	par::snpcount = linecount;
-	
-	printLog( "done!\n" );
+	printLog( int2String( linecount ) + " individuals read\n\n" );
 }
 
 //////////////////////////////////////////////////
 // TPED / TFAM file handling functions
 //////////////////////////////////////////////////
-
 void readTpedFile( Ped &ped, Map &map )
 {
-	string buffer;
-	stringstream ss;
+	string buffer = " ";
 	int linecount = 0;
-	bool stringBool = false;
 	
 	// Read TFAM into ped
-	printLog( "Reading tfam file [ " + par::tfamfile + " ] ..." );
+	printLog( "Reading TFAM file [ " + par::tfamfile + " ]\n" );
 	
-	ifstream tfam(par::tfamfile.c_str());
-	if (!tfam.is_open()) error (par::tfamfile + " couldn't be opened");
+	ifstream TFAM( par::tfamfile.c_str(), ios::in );
+	
+	if (!TFAM.is_open() or !TFAM.good()) error ("TFAM file [ " + par::tfamfile + " ] cannot be opened");
 	
 	while (1)
 	{
 		// Check eof
-		if (tfam.eof()) break;
+		if ( TFAM.eof() ) break;
 		
 		Person *per = new Person;
 		
 		// Read FID
-		stringBool = getString( tfam, buffer );
-		
-		if (stringBool)
+		if (getString( TFAM, buffer ))
 		{
 			if (buffer.substr(0,1) == "#") // If line is a comment
 			{
 				delete per;
 				
 				char comment = ' ';
-				while (comment != '\n' and !tfam.eof())
+				while (comment != '\n' and !TFAM.eof())
 				{
-					tfam.get(comment);
+					TFAM.get( comment );
 				}
 				continue;
 			}
+			
 			else
 			{
 				per->fid = buffer;
 			}
 		}
+		
 		else
 		{
 			delete per;
@@ -406,38 +387,34 @@ void readTpedFile( Ped &ped, Map &map )
 		}
 		
 		// Read IID
-		stringBool = getString( tfam, buffer );
-		if (stringBool) per->iid = buffer;
+		if (getString( TFAM, buffer )) per->iid = buffer;
+		
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error ("No Individual ID for line " + ss.str());
+			error ("No Individual ID for line " + int2String( linecount + 1 ));
 		}
 		
 		// Read PID
-		stringBool = getString( tfam, buffer );
-		if (stringBool) per->pid = buffer;
+		if (getString( TFAM, buffer )) per->pid = buffer;
+		
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Paternal ID for line " + ss.str());
+			error( "No Paternal ID for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read MID
-		stringBool = getString( tfam, buffer );
-		if (stringBool) per->mid = buffer;
+		if (getString( TFAM, buffer )) per->mid = buffer;
+		
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error("No Maternal ID for line " + ss.str());
+			error( "No Maternal ID for line " + int2String( linecount + 1 ) );
 		}
 		
 		// Read Sex
-		stringBool = getString( tfam, buffer );
-		if (stringBool) 
+		if (getString( TFAM, buffer )) 
 		{
 			if (buffer == "1")
 			{
@@ -455,13 +432,11 @@ void readTpedFile( Ped &ped, Map &map )
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error ("No Sex code for line " + ss.str());
+			error ("No Sex code for line " + int2String( linecount + 1 ));
 		}
 		
 		// Read Phenotype
-		stringBool = getString( tfam, buffer);
-		if (stringBool)
+		if (getString( TFAM, buffer))
 		{
 			if (buffer == "1")
 			{
@@ -479,8 +454,7 @@ void readTpedFile( Ped &ped, Map &map )
 		else
 		{
 			delete per;
-			ss << linecount + 1;
-			error ("No pheno data for line " + ss.str());
+			error ("No pheno data for line " + int2String( linecount + 1 ));
 		}
 		
 		++linecount;
@@ -491,121 +465,90 @@ void readTpedFile( Ped &ped, Map &map )
 	
 	par::personcount = linecount;
 	
-	tfam.close();
-	printLog( "done!\n" );
+	printLog( "Pedigrees for " + int2String( linecount ) + " individuals read\n\n" );
+	
+	TFAM.close();
 	
 	// Read TPED into ped and map
-	printLog( "Reading tped from [ " + par::tpedfile + " ] ...");
+	printLog( "Reading TPED from [ " + par::tpedfile + " ]\n");
 	
-	ifstream tped(par::tpedfile.c_str());
-	if (!tped.is_open()) error (par::tpedfile + " couldn't be opened");
+	ifstream TPED(par::tpedfile.c_str(), ios::in);
+	
+	if (!TPED.is_open() or !TPED.good()) error (par::tpedfile + " couldn't be opened");
 	
 	linecount = 0; // Reset linecount
 	
 	while (1)
 	{
-		if (tped.eof()) break;
+		if (TPED.eof()) break;
 		
 		// Read chr
-		stringBool = getString( tped, buffer );
-		
-		if (stringBool)
+		if (getString( TPED, buffer ))
 		{
 			if (buffer.substr(0,1) == "#") // if a comment
 			{
 				char comment = ' ';
-				while (comment != '\n' or !tped.eof())
+				while (comment != '\n' or !TPED.eof())
 				{
-					tped.get(comment);
+					TPED.get( comment );
 				}
 				continue;
 			}
-			else
-			{
-				map.chr.push_back( intChrFromString( buffer ) );
-			}
+			
+			else map.chr.push_back( intChrFromString( buffer ) );
 		}
+		
 		else continue;
 		
 		// Read RSID
-		stringBool = getString( tped, buffer );
-		if (stringBool) map.rsid.push_back( buffer );
-		else
-		{
-			ss << linecount + 1;
-			error ("No RSID for line " + ss.str());
-		}
+		if (getString( TPED, buffer )) map.rsid.push_back( buffer );
+		
+		else error ("No RSID for line " + int2String( linecount + 1));
 		
 		// Read Genetic Distance if used
 		if (!par::map3)
 		{
-			stringBool = getString( tped, buffer );
+			if (getString( TPED, buffer )) map.genetic.push_back( atoi( buffer.c_str() ) );
 			
-			if (stringBool) map.genetic.push_back( atoi( buffer.c_str() ) );
-			else
-			{
-				ss << linecount + 1;
-				error ("No Genetic Distance for line " + ss.str() + ". Specify --map3 if tped file doesn't include genetic distance.");
-			}
+			else error ("No Genetic Distance for line " + int2String( linecount + 1 ) + ". Specify --map3 if TPED file doesn't include genetic distance.");
 		}
+		
 		else map.genetic.push_back( 0 );
 		
 		// Read Position
-		stringBool = getString( tped, buffer );
-		if (stringBool)
+		if (getString( TPED, buffer ))
 		{
-			int tmp = atoi( buffer.c_str() );
-			
-			if (tmp < 0)
-			{
-				if (!par::map3) map.genetic.pop_back();
-				map.rsid.pop_back();
-				map.chr.pop_back();
-				
-				char skip = ' ';
-				while (skip != '\n' or !tped.eof())
-				{
-					tped.get(skip);
-				}
-				continue;
-			}
-			else
-			{
-				map.position.push_back( tmp );
-			}
+			map.position.push_back( atoi( buffer.c_str() ) );
 		}
-		else
-		{
-			ss << linecount + 1;
-			error ("No physical position for line " + ss.str());
-		}
+		
+		else error ("No physical position for line " + int2String( linecount + 1 ));
 		
 		// Read in genotype
 		bool doa1 = true;
-		ped.hasAllele1.push_back( false );
-		ped.hasAllele2.push_back( false );
-		ped.allele1.push_back( 'N' );
-		ped.allele2.push_back( 'N' );
+		bool gotallele1 = false;
+		bool gotallele2 = false;
 		char c = ' ';
 		
 		int indCount = 0; // Must have an individual counter
 		
 		while (1)
 		{
-			tped.get(c);
+			TPED.get( c );
 			
 			if (c == ' ' or c == '\t' or c == '\r') continue;
-			if (c == '\n' or tped.eof()) break;
+			if (c == '\n' or TPED.eof()) break;
 			
-			if (!ped.hasAllele1[ linecount ] and c != '0')
+			if (!gotallele1 and c != '0')
 			{
-				ped.allele1[ linecount ] = c;
-				ped.hasAllele1[ linecount ] = true;
+				ped.allele1.push_back( c );
+				ped.hasAllele1.push_back( true );
+				gotallele1 = true;
 			}
-			else if (ped.hasAllele1[ linecount ] and !ped.hasAllele2[ linecount ] and c != '0' and c != ped.allele1[ linecount ] )
+			else if (gotallele1 and !gotallele2 and c != '0' and c != ped.allele1.back() )
 			{
-				ped.allele2[ linecount ] = c;
-				ped.hasAllele2[ linecount ] = true;
+				ped.allele2.push_back( c );
+				ped.hasAllele2.push_back( true );
+				gotallele2 = true;
 			}
 			
 			if (doa1)
@@ -656,14 +599,25 @@ void readTpedFile( Ped &ped, Map &map )
 			}
 		}
 		
+		if (!gotallele1)
+		{
+			ped.hasAllele1.push_back( false );
+			ped.allele1.push_back( 'N' );
+		}
+		
+		if (!gotallele2)
+		{
+			ped.hasAllele1.push_back( false );
+			ped.allele2.push_back( 'N' );
+		}
+		
 		// Increment line count
 		++linecount;
 	}
 	
-	tped.close();
-	printLog( "done!\n" );
-	
 	par::snpcount = linecount;
+	
+	printLog(int2String( linecount ) + " markers read\n\n" );
 }
 
 //////////////////////////////////////////////////
@@ -679,9 +633,9 @@ void readTpedFile( Ped &ped, Map &map )
 // 	
 // 	string file = par::outfile + ".bped";
 // 	
-// 	printLog("Reading bped file [ " + file + " ] ...");
-// 	ifstream BPED;
-// 	BPED.open( file.c_str(), ios::binary );
+// 	printLog("Reading bped file [ " + file + " ]\n");
+//
+// 	ifstream BPED.open( file.c_str(), ios::in | ios::binary );
 // 	
 // 	BPED.read( reinterpret_cast<char*>( &tmpInt ), sizeof(int) );
 // 	par::snpcount = tmpInt;
@@ -829,7 +783,7 @@ void readTpedFile( Ped &ped, Map &map )
 // 	}
 // 	
 // 	BPED.close();
-// 	printLog("done!\n");
+// 	printLog(" done!\n");
 // }
 
 // void readBfamFile( Ped &ped )
@@ -837,10 +791,9 @@ void readTpedFile( Ped &ped, Map &map )
 // 	string file = par::outfile + ".bfam";
 // 	string buf = " ";
 // 	
-// 	printLog("Reading bfam file [ " + file + " ] ...");
+// 	printLog("Reading bfam file [ " + file + " ]\n");
 // 	
-// 	ifstream BFAM;
-// 	BFAM.open( file.c_str() );
+// 	ifstream BFAM.open( file.c_str(), ios::in );
 // 	
 // 	for (int i = 0; i < par::personcount; ++i)
 // 	{
@@ -864,8 +817,6 @@ void readTpedFile( Ped &ped, Map &map )
 // 	}
 // 		
 // 	BFAM.close();
-// 	
-// 	printLog("done!\n");
 // }
 
 // void readBmapFile( Ped &ped, Map &map )
@@ -873,10 +824,9 @@ void readTpedFile( Ped &ped, Map &map )
 // 	string file = par::outfile + ".bmap";
 // 	string buf = " ";
 // 	
-// 	printLog("Reading bmap file from [ " + file + " ] ...");
+// 	printLog("Reading bmap file from [ " + file + " ]\n");
 // 	
-// 	ifstream BMAP;
-// 	BMAP.open( file.c_str() );
+// 	ifstream BMAP.open( file.c_str(), ios::in );
 // 	
 // 	char c = ' ';
 // 	for (int i = 0; i < par::snpcount; ++i)
@@ -905,27 +855,28 @@ void readTpedFile( Ped &ped, Map &map )
 // 	}
 // 	
 // 	BMAP.close();
-// 	printLog("done!\n");
 // }
 
 //////////////////////////////////////////////////
 // Read method for PLINK .genome file
 //////////////////////////////////////////////////
-void readPLINKGenome( Duo &duo )
+void readPLINKGenome( Duo &duo, Ped &ped )
 {
 	// Set up indexes
 	bool stringBool = false;
-	string buffer = " ";
+	string buffer, fid1Buffer, iid1Buffer, fid2Buffer, iid2Buffer;
+	buffer = fid1Buffer = iid1Buffer = fid2Buffer = iid2Buffer = " ";
 	char c = ' ';
 	
-	int fid1,iid1,fid2,iid2,ibs0,ibs1,ibs2, index;
+	int fid1,iid1,fid2,iid2,ibs0,ibs1,ibs2, index, pedIndex, linecount;
 	fid1 = iid1 = fid2 = iid2 = ibs0 = ibs1 = ibs2 = -1;
-	index = 0;
+	index = pedIndex = linecount = 0;
 	
-	printLog("Reading PLINK genome file [ " + par::genomefile + " ] ...");
+	printLog("Reading PLINK genome file [ " + par::genomefile + " ]\n");
 	// Open specified file
-	ifstream GENOME( par::genomefile.c_str() );
-	if(!GENOME.is_open()) error("Unable to open genome file [  " + par::genomefile + " ]");
+	ifstream GENOME( par::genomefile.c_str(), ios::in );
+	
+	if (!GENOME.is_open() or !GENOME.good()) error( "PLINK genome file [ " + par::genomefile + " ] cannot be read");
 	
 	// On first line figure out column positions (FID1, IID1, FID2, IID2, IBS0, IBS1,IBS2)
 	while (1)
@@ -969,8 +920,9 @@ void readPLINKGenome( Duo &duo )
 		
 		++index;
 	}
-	
+		
 	// Check for all required columns
+	// -1 corresponds to the initializer value used above to for these variables
 	if (fid1 == -1) error("FID1 not found in genome file");
 	else if (iid1 == -1) error("IID1 not found in genome file");
 	else if (fid2 == -1) error("FID2 not found in genome file");
@@ -991,19 +943,19 @@ void readPLINKGenome( Duo &duo )
 		{
 			if (index == fid1)
 			{
-				duo.fid1.push_back( buffer );
+				fid1Buffer = buffer;
 			}
 			else if (index == iid1)
 			{
-				duo.iid1.push_back( buffer );
+				iid1Buffer = buffer;
 			}
 			else if (index == fid2)
 			{
-				duo.fid2.push_back( buffer );
+				fid2Buffer = buffer;
 			}
 			else if (index == iid2)
 			{
-				duo.iid2.push_back( buffer );
+				iid2Buffer = buffer;
 			}
 			else if (index == ibs0)
 			{
@@ -1019,42 +971,80 @@ void readPLINKGenome( Duo &duo )
 			}
 			
 		}
+		
 		else
 		{
 			index = 0;
+			fid1Buffer = iid1Buffer = fid2Buffer = iid2Buffer = " ";
+			++linecount;
 			continue;
+		}
+		
+		if (fid1Buffer != " " and iid1Buffer != " ")
+		{
+			if (ped.boolHavePerson( fid1Buffer, iid1Buffer, pedIndex ))
+			{
+				duo.ind1Index.push_back( ped.samples[ pedIndex ] );
+			}
+			
+			else
+			{
+				Person *per = new Person;
+				
+				per->fid = fid1Buffer;
+				per->iid = iid1Buffer;
+				
+				ped.samples.push_back( per );
+				duo.ind1Index.push_back( per );
+			}
+			
+			fid1Buffer = iid1Buffer = " ";
+		}
+		
+		if (fid2Buffer != " " and iid2Buffer != " ")
+		{
+			if (ped.boolHavePerson( fid2Buffer, iid2Buffer, pedIndex ))
+			{
+				duo.ind2Index.push_back( ped.samples[ pedIndex ] );
+			}
+			else
+			{
+				Person *per = new Person;
+				
+				per->fid = fid2Buffer;
+				per->iid = iid2Buffer;
+				
+				ped.samples.push_back( per );
+				duo.ind2Index.push_back( per );
+			}
+			
+			fid2Buffer = iid2Buffer = " ";
 		}
 		
 		++index;
 		
-		if (c == '\n') index = 0;
+		if (c == '\n')
+		{
+			index = 0;
+			++linecount;
+		}
 	}
 	
 	// Close specified file
 	GENOME.close();
 	
-	printLog("done!\n");
+	printLog( int2String( linecount ) + " PLINK pairwise comparisons read\n\n" );
 }
 
 //////////////////////////////////////////////////
 // Conversion functions. Takes char or string and
 // converts to an integer for efficiency
 //////////////////////////////////////////////////
-
-int intGenoFromChar(const char &c)
-{
-	if (c == '1' or c == 'A' or c == 'a') return 1;
-	else if (c == '2' or c == 'C' or c == 'c') return 2;
-	else if (c == '3' or c == 'G' or c == 'g') return 3;
-	else if (c == '4' or c == 'T' or c == 't') return 4;
-	else return 0;
-}
-
 int intChrFromString(const string &s)
 {
-	if (s == "X") return 23;
-	else if (s == "Y") return 24;
-	else if (s == "XY") return 25;
-	else if (s == "MT" or s == "M" or s == "Mito" or s == "MITO") return 26;
+	if (s == "X") return XINT;
+	else if (s == "Y") return YINT;
+	else if (s == "XY") return XYINT;
+	else if (s == "MT" or s == "M" or s == "Mito" or s == "MITO") return MTINT;
 	else return atoi( s.c_str() );
 }

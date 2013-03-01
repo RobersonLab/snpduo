@@ -54,14 +54,14 @@ void Duo::printCounts()
 	
 	printLog( "Writing pair-wise IBS counts to [ " + file + " ]\n");
 	
-	COUNTS << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2" << "\n";
+	COUNTS << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,IBS2*" << "\n";
 	
 	for (unsigned int i = 0; i < numCounts(); ++i)
 	{		
 		COUNTS 
 		<< ind1Index[i]->fid << "," << ind1Index[i]->iid << "," 
 		<< ind2Index[i]->fid << "," << ind2Index[i]->iid << "," 
-		<< ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "\n";
+		<< ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "," << ibs2starCount[i] << "\n";
 	}
 	
 	COUNTS.close();
@@ -82,15 +82,16 @@ void Duo::printMeanSD()
 	
 	MEANSD.setf( ios::fixed );
 	
-	MEANSD << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS" << "\n";
+	MEANSD << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,IBS2*,Mean_IBS,SD_IBS,IBS2*%,Informative%" << "\n";
 	
 	for (unsigned int i = 0; i < numMean(); ++i)
 	{
 		MEANSD
 		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
 		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
-		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
-		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << "\n"; 
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "," << ibs2starCount[i] << ","
+		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+		 << setprecision( PRECISE ) << ibs2starpercent[i] << "," << setprecision( PRECISE ) << informativepercent[i] << "\n"; 
 	}
 	
 	MEANSD.close();
@@ -135,17 +136,17 @@ void Duo::printSpecifiedAndCalculated()
 	
 	printLog("Writing theoretical relationships to [ " + file + " ]\n");	
 	
-	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,SpecifiedRelationship,CalculatedRelationship" << "\n";
+	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,IBS2*,Mean_IBS,SD_IBS,IBS2*%,Informative%,SpecifiedRelationship,CalculatedRelationship" << "\n";
 	
 	for (unsigned int i = 0; i < numCalculated(); ++i)
 	{
 		THEORY
 		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
 		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
-		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "," << ibs2starCount[i] << ","
 		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
-		 << RELATIONSHIP[ specifiedRelationship[i] ] << ","
-		 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
+		 << setprecision( PRECISE ) << ibs2starpercent[i] << "," << setprecision( PRECISE ) << informativepercent[i] << ","
+		 << RELATIONSHIP[ specifiedRelationship[i] ] << "," << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 	}
 	
 	THEORY.close();
@@ -164,15 +165,16 @@ void Duo::printCalculatedOnly()
 	
 	printLog( "Writing theoretical relationships to [ " + file + " ]\n" );	
 	
-	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,CalculatedRelationship" << "\n";
+	THEORY << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,IBS2*,Mean_IBS,SD_IBS,IBS2*%,Informative%,CalculatedRelationship" << "\n";
 	
 	for (unsigned int i = 0; i < numCalculated(); ++i)
 	{
 		THEORY
 		 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
 		 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
-		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+		 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "," << ibs2starCount[i] << ","
 		 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+		 << setprecision( PRECISE ) << ibs2starpercent[i] << "," << informativepercent[i] << "," 
 		 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 	}
 	
@@ -192,7 +194,7 @@ void Duo::printConflicted()
 	
 	printLog( "Writing relationships that conflict with specified pedigrees to [ " + file + " ]\n" );
 	
-	CONFLICTED << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,Mean_IBS,SD_IBS,SpecifiedRelationship,CalculatedRelationship" << "\n"; 
+	CONFLICTED << "FID1,IID1,FID2,IID2,IBS0,IBS1,IBS2,IBS2*,Mean_IBS,SD_IBS,IBS2*%,Informative%,SpecifiedRelationship,CalculatedRelationship" << "\n"; 
 	
 	for (unsigned int i = 0; i < numSpecified(); ++i)
 	{
@@ -201,8 +203,9 @@ void Duo::printConflicted()
 			CONFLICTED
 			 << ind1Index[i]->fid << "," << ind1Index[i]->iid << ","
 			 << ind2Index[i]->fid << "," << ind2Index[i]->iid << ","
-			 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << ","
+			 << ibs0Count[i] << "," << ibs1Count[i] << "," << ibs2Count[i] << "," << ibs2starCount[i] << ","
 			 << setprecision( PRECISE ) << meanIbs[i] << "," << setprecision( PRECISE ) << sdIbs[i] << ","
+			 << setprecision( PRECISE ) << ibs2starpercent[i] << "," << setprecision( PRECISE ) << informativepercent[i] << ","
 			 << RELATIONSHIP[ specifiedRelationship[i] ] << ","
 			 << RELATIONSHIP[ calculatedRelationship[i] ] << "\n";
 		}

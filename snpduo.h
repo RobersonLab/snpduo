@@ -13,9 +13,9 @@ class Map
 	public:
 	// Class members
 	vector<int> chr;
-	vector<string> rsid;
 	vector<int> genetic;
 	vector<int> position;
+	vector<string> rsid;
 	
 	// Count function
 	unsigned int numMarkers() { return chr.size(); }
@@ -73,11 +73,11 @@ class Ped
 	// Class members
 	vector<Person*> samples;
 	
-	vector<bool> hasAllele1;
-	vector<bool> hasAllele2;
 	vector<char> allele1;
 	vector<char> allele2;
-	
+	vector<bool> hasAllele1;
+	vector<bool> hasAllele2;
+		
 	// Functions
 	unsigned int numPeople() { return samples.size(); }
 	

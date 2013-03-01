@@ -17,9 +17,9 @@ using namespace std;
 #include "output.h"
 
 // Macros
-const string VERSION = "1.01"; // 4 char
-const string RELEASE = "b"; // 1 char. Blank for full release. a for alpha. b for beta
-const string DATE = "2009/Mar/09"; // 10 char. In YYYY/MMM/DD format
+const string VERSION = "1.02"; // 4 char
+const string RELEASE = "a"; // 1 char. Blank for full release. a for alpha. b for beta
+const string DATE = "2009/Sep/10"; // 10 char. In YYYY/MMM/DD format
 
 // Externalized LOG declaration
 ofstream LOG;
@@ -28,9 +28,9 @@ ofstream LOG;
 int main (int argc, char *argv[])
 {
 	// Set up variables to time the program
-	clock_t start_time, end_time;
+//	clock_t start_time, end_time;
 	time_t sysTime;
-	start_time = clock();
+//	start_time = clock();
 	
 	// Set Options before continuing
 	CArgs options(argc, argv);
@@ -123,11 +123,11 @@ int main (int argc, char *argv[])
 	
 	if (par::conflicting and !par::genome) duo.printConflicted();
 	
-	end_time = clock();
+//	end_time = clock();
 	
 	sysTime = time( 0 );
 	printLog( "\nAnalysis ended: " + (string) ctime( &sysTime ));
-	printLog( "Run time: " + dbl2String( (double) (end_time - start_time) / CLOCKS_PER_SEC )  + " seconds\n" );
+//	printLog( "Run time: " + dbl2String( (double) (end_time - start_time) / CLOCKS_PER_SEC )  + " seconds\n" );
 	
 	return 0;
 }

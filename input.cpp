@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
-#include <bitset>
+#include <cstdlib>
 
 // Namespace
 using namespace std;
@@ -46,7 +46,7 @@ using namespace std;
 // 			if (buffer.substr(0,1) == "#") // If line starts with comment
 // 			{
 // 				char comment = ' ';
-// 				while (comment != '\n' or !MAP.eof()) MAP.get( comment );
+// 				while (comment != '\n' and !MAP.eof()) MAP.get( comment );
 // 				
 // 				continue;
 // 			}
@@ -112,7 +112,7 @@ void readMapFile (Map &m)
 			if (buffer.substr(0,1) == "#") // If line starts with comment
 			{
 				char comment = ' ';
-				while (comment != '\n' or !MAP.eof()) MAP.get( comment );
+				while (comment != '\n' and !MAP.eof()) MAP.get( comment );
 				
 				continue;
 			}
@@ -488,7 +488,7 @@ void readTpedFile( Ped &ped, Map &map )
 			if (buffer.substr(0,1) == "#") // if a comment
 			{
 				char comment = ' ';
-				while (comment != '\n' or !TPED.eof())
+				while (comment != '\n' and !TPED.eof())
 				{
 					TPED.get( comment );
 				}

@@ -15,7 +15,8 @@ const string RELATIONSHIP[] = {"Unrelated","Identical","ParentChild","Sibling","
 // Class
 class Duo
 {
-	public:	
+	public:
+	// Variables
 	vector<Person*> ind1Index;
 	vector<Person*> ind2Index;
 	vector<int> specifiedRelationship; // Determined from ped file
@@ -23,8 +24,12 @@ class Duo
 	vector<int> ibs0Count; // A count of IBS0 calls
 	vector<int> ibs1Count; // A count of IBS1 calls
 	vector<int> ibs2Count; // A count of IBS2 calls
+	vector<int> ibs2starCount; // A count of IBS2* calls (AB -> AB)
 	vector<double> meanIbs; // Mean IBS score for analyzed snps
 	vector<double> sdIbs; // SD IBS score for analyzed snps
+	
+	vector<double> informativepercent; // Percent informative = (IBS2* + IBS0*) / (IBS2 + IBS1 + IBS0)
+	vector<double> ibs2starpercent; // Percent IBS* = IBS2* / (IBS2* + IBS1 + IBS0*)
 	
 	// Size functions
 	unsigned int size() { return ind1Index.size(); }
@@ -33,6 +38,9 @@ class Duo
 	unsigned int numCalculated() { return calculatedRelationship.size(); }
 	unsigned int numMean() { return meanIbs.size(); }
 	unsigned int numSD() { return sdIbs.size(); }
+	unsigned int numibs2star() { return ibs2starCount.size(); }
+	unsigned int numibs2starpercent() { return ibs2starpercent.size(); }
+	unsigned int numinformativepercent() { return informativepercent.size(); }
 	
 	// Analysis functions
 	void fillIdentities( const Ped & );
@@ -53,7 +61,7 @@ class Duo
 	void printConflicted();
 	
 	// Constructor
-	Duo(): ind1Index( 0 ), ind2Index( 0 ), specifiedRelationship( 0 ), calculatedRelationship( 0 ), ibs0Count( 0 ), ibs1Count( 0 ), ibs2Count ( 0 ) {}
+	Duo(): ind1Index( 0 ), ind2Index( 0 ), specifiedRelationship( 0 ), calculatedRelationship( 0 ), ibs0Count( 0 ), ibs1Count( 0 ), ibs2Count ( 0 ), ibs2starCount( 0 ), informativepercent( 0 ), ibs2starpercent( 0 ) {}
 };
 
 class IBSCount
@@ -62,8 +70,9 @@ class IBSCount
 	int ibs0;
 	int ibs1;
 	int ibs2;
+	int ibs2star;
 	
-	IBSCount(): ibs0( 0 ), ibs1( 0 ), ibs2( 0 )  {}
+	IBSCount(): ibs0( 0 ), ibs1( 0 ), ibs2( 0 ), ibs2star( 0 )  {}
 };
 
 IBSCount getIBS( Person *, Person * );

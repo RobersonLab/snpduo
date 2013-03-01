@@ -76,6 +76,7 @@ void Duo::getCounts( const Ped &ped )
 	ibs0Count.reserve( comparisons );
 	ibs1Count.reserve( comparisons );
 	ibs2Count.reserve( comparisons );
+	ibs2starCount.reserve( comparisons );
 	
 	// Go comparison by comparison to calculate counts
 	for (int i = 0; i < par::personcount - 1; ++i)
@@ -90,6 +91,7 @@ void Duo::getCounts( const Ped &ped )
 			ibs0Count.push_back( tmp.ibs0 );
 			ibs1Count.push_back( tmp.ibs1 );
 			ibs2Count.push_back( tmp.ibs2 );
+			ibs2starCount.push_back( tmp.ibs2star );
 		}
 	}
 }
@@ -191,7 +193,14 @@ IBSCount getIBS( Person *i1, Person *i2 )
 				
 				if (p1a1 == p2a1)
 				{
-					if (p1a2 == p2a2) tmp.ibs2++;
+					if (p1a2 == p2a2)
+					{
+						if (p1a1 != p1a2)
+						{
+							tmp.ibs2star++;
+						}
+						tmp.ibs2++;
+					}
 					else tmp.ibs1++;
 				}
 				else
@@ -219,25 +228,35 @@ void Duo::getMeanAndSDFromCounts( )
 	
 	if (numMean() != numCounts()) meanIbs.reserve( numCounts() );
 	if (numSD() != numCounts()) sdIbs.reserve( numCounts() );
+	if (numibs2starpercent() != numCounts()) ibs2starpercent.reserve( numCounts() );
+	if (numinformativepercent() != numCounts()) informativepercent.reserve( numCounts() );
 	
 	vector<int>::iterator ibs0iter = ibs0Count.begin();
 	vector<int>::iterator ibs1iter = ibs1Count.begin();
 	vector<int>::iterator ibs2iter = ibs2Count.begin();
+	vector<int>::iterator ibs2stariter = ibs2starCount.begin();
 	
 	while ( ibs0iter < ibs0Count.end() )
 	{
 		int ibs0 = *ibs0iter;
 		int ibs1 = *ibs1iter;
 		int ibs2 = *ibs2iter;
+		int ibs2star = *ibs2stariter;
 		
 		double mean = (double) ((ibs2 * 2.0) + ibs1) / (ibs0 + ibs1 + ibs2);
+		double ibs2startmppercent = (double) ibs2star / (ibs2star + ibs1 + ibs0);
+		double informtmp = (double) (ibs2star + ibs0) / (ibs2star + ibs0 + ibs1);
 		
 		meanIbs.push_back( mean );
 		sdIbs.push_back( calculateSD( mean, ibs0, ibs1, ibs2 ) );
 		
+		ibs2starpercent.push_back( ibs2startmppercent );
+		informativepercent.push_back( informtmp );
+		
 		++ibs0iter;
 		++ibs1iter;
 		++ibs2iter;
+		++ibs2stariter;
 	}
 }
 

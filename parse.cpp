@@ -265,7 +265,7 @@ void setOptions (CArgs &arg)
 		"\n"
 		"       --out <fileroot>     Specify the root name for output files\n"
 		"\n"
-		"       --counts             Prints IBS 0,1,2 counts to .count file\n"
+		"       --counts             Prints IBS 0,1,2 and 2* (AB->AB) counts to .count file\n"
 		"       --summary            Prints counts + Mean and Standard Deviation of IBS to .summary file\n"
 		"       --specified          Prints relationships specified in input to .specified file\n"
 		"       --calculated         Prints calculated relationships from Mean and SD to .theoretical file\n"

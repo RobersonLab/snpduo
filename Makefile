@@ -1,7 +1,6 @@
-# Replace g++ with your compiler, or a direct link if necessary
 CXX = g++
 
-# Any custom compiler flags here , such as -Wall, march, mtune, -m32 or -m64, etc.
+# Any custom compiler flags here ( -Wall, -g, etc)
 CXXFLAGS = 
 
 # --------------------------------------------------------------------
@@ -32,3 +31,6 @@ FORCE:
 
 clean:
 	rm -f *.o *~
+
+install:
+	mv ./snpduo /usr/bin

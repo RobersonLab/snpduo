@@ -1,36 +1,34 @@
 #ifndef _OPTIONS_H_
 #define _OPTIONS_H_
 
+// stl
 #include <string>
+
+// imports
+using std::string;
 
 class par
 {
 	public:
 	// i/o related
 	// input
-	static string pedfile;
-	static string mapfile;
+	static string pedFile;
+	static string mapFile;
 	static string file;
 	
-	static string tpedfile;
+	static string tpedFile;
 	static string tfamfile;
 	static string tfile;
-	
-// 	static string bpedfile;
-// 	static string bmapfile;
-// 	static string bfamfile;
-// 	static string bfile;
 
-	static string genomefile;
+	static string genomeFile;
 	static bool genome;
 	
 	// output
 	static bool recode;
 	static bool transpose;
-// 	static bool binary;
-	static bool webduo;
+	static bool webDuo;
 	
-	static string outfile;
+	static string out;
 	
 	// screen messages
 	static bool verbose;
@@ -40,19 +38,15 @@ class par
 	static bool summary;
 	static bool specified;
 	static bool calculated;
+	static bool oldCalculated;
 	static bool conflicting;
 	
 	// Other options
-// 	static bool findblocks;
-// 	static bool makeucsc;
 	static bool map3;
-	static bool version;
 	
- 	static int snpcount;
- 	static int personcount;
+ 	static int snpCount;
 };
 
-
-void CheckMinimumInput();
+void checkMinimumInput();
 
 #endif

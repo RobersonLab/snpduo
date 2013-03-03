@@ -1,18 +1,18 @@
 CXX = g++
 
-# Any custom compiler flags here ( -Wall, -g, etc)
+# Any custom compiler flags here ( -g, -march, -mtune, -m64, etc)
+# For 64-bit compilation add -m64 to CXXFLAGS
 CXXFLAGS = 
-
 # --------------------------------------------------------------------
 # Do not edit below this line
 # --------------------------------------------------------------------
 
-CXXFLAGS += -O3 -I.
+CXXFLAGS += -O3 -I. -Wall
 OUTPUT = snpduo
 
-SRC = duo.cpp helper.cpp input.cpp options.cpp output.cpp parse.cpp snpduo.cpp
+SRC = cargs.cpp duo.cpp helper.cpp input.cpp locus.cpp options.cpp output.cpp ped.cpp snpduo.cpp
 
-HDR = duo.h helper.h input.h options.h output.h snpduo.h
+HDR = cargs.h duo.h helper.h input.h options.h output.h ped.h
 
 OBJ = $(SRC:.cpp=.o)
 
@@ -33,4 +33,4 @@ clean:
 	rm -f *.o *~
 
 install:
-	mv ./snpduo /usr/bin
+	mv ./$(OUTPUT) /usr/bin

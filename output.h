@@ -1,15 +1,21 @@
 #ifndef _OUTPUT_H_
 #define _OUTPUT_H_
 
+// stl
 #include <string>
 
-#include "snpduo.h"
+// imports
+using std::string;
 
-void printLog( string );
-// void writeBinary( Ped &, Map & );
-void writeTranspose( Ped &, Map & );
-void writeForWeb( Ped &, Map & );
+// custom
+#include "ped.h"
+#include "locus.h"
 
-string fileGenotypeString( const Ped &, int, int );
+// functions
+void writeLog( string const&  );
+void writeTranspose( Ped&, LocusMap& );
+void writeForWeb( Ped&, LocusMap& );
+
+string fileGenotypeString( Ped const& , int, int );
 
 #endif

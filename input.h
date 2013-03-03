@@ -1,30 +1,23 @@
 #ifndef _INPUT_H_
 #define _INPUT_H_
 
+// stl
 #include <string>
 
-#include "duo.h"
-#include "snpduo.h"
+// imports
+using std::string;
 
-// Macros for chromosome numbers
-const int XINT = 23;
-const int YINT = 24;
-const int XYINT = 25;
-const int MTINT = 26;
+// custom
+#include "duo.h"
+#include "locus.h"
+#include "ped.h"
 
 // Conversion functions
-int intGenoFromChar( const char & );
-int intChrFromString( const string & );
+int intGenoFromChar( char  );
+int intChrFromString( string const&  );
 
 // File reading functions
-void readPedFile( Ped & );
-void readMapFile( Map & );
-void readTpedFile( Ped &, Map & );
-
-// void readBpedFile( Ped &, Map & );
-// void readBfamFile( Ped & );
-// void readBmapFile( Ped &, Map & );
-
-void readPLINKGenome( Duo &, Ped & );
+void readTpedFile( Ped&, LocusMap& );
+void readPlinkGenome( DuoMap&, Ped& );
 
 #endif

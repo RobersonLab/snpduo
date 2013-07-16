@@ -27,10 +27,13 @@ $(OBJ) : $(HDR)
 	$(CXX) $(CXXFLAGS) -c $*.cpp
 .SUFFIXES : .cpp .c .o $(SUFFIXES)
 
-FORCE:
+.PHONEY : clean install uninstall
 
 clean:
-	rm -f *.o *~
+	rm -f *.o $(OUTPUT)
 
 install:
-	mv ./$(OUTPUT) /usr/bin
+	install -m 0755 ./$(OUTPUT) /usr/bin
+
+uninstall:
+	rm /usr/bin/$(OUTPUT)
